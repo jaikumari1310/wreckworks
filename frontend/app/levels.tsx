@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/src/game/theme';
 import { loadProgress, Progress, getLevelRecord } from '@/src/game/progress';
@@ -9,6 +10,7 @@ import { sfx } from '@/src/game/sfx';
 
 export default function LevelSelect() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [progress, setProgress] = useState<Progress | null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -20,7 +22,7 @@ export default function LevelSelect() {
   return (
     <View style={styles.root} testID="level-select-screen">
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingLeft: Math.max(20, insets.left + 12), paddingRight: Math.max(20, insets.right + 12), paddingTop: Math.max(14, insets.top + 6) }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} testID="back-button">
           <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
         </Pressable>
