@@ -1,0 +1,146 @@
+{
+  "app_name": "WreckWorks",
+  "personality": "4 Tactile / Playful LIGHT",
+  "personality_one_liner": "A vibrant, tactile construction-site puzzle game featuring chunky, deeply satisfying interactions, bold industrial contrast, and immediate visual feedback.",
+  "color": {
+    "surface": "#F3F4F6",
+    "onSurface": "#111827",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#1F2937",
+    "surfaceTertiary": "#E5E7EB",
+    "onSurfaceTertiary": "#374151",
+    "surfaceInverse": "#111827",
+    "onSurfaceInverse": "#F9FAFB",
+    "brand": "#FF5A00",
+    "brandPrimary": "#FF5A00",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#FFC107",
+    "onBrandSecondary": "#452900",
+    "brandTertiary": "#38BDF8",
+    "onBrandTertiary": "#FFFFFF",
+    "success": "#4ADE80",
+    "onSuccess": "#064E3B",
+    "warning": "#F59E0B",
+    "onWarning": "#452900",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#38BDF8",
+    "onInfo": "#FFFFFF",
+    "border": "#D1D5DB",
+    "borderStrong": "#9CA3AF",
+    "divider": "#E5E7EB"
+  },
+  "typography": {
+    "displayFontFamily": "Fredoka",
+    "textFontFamily": "Nunito",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24,
+      "3xl": 32,
+      "4xl": 48
+    }
+  },
+  "spacing": {
+    "rule": "Generous touch-safe padding with a landscape-first approach. Modals and HUD elements must clear safe areas and leave the center screen unobstructed.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "2",
+  "navigation": "stack_only",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use dark frosted glass for the Pause menu and Level Complete overlays to separate HUD from gameplay.",
+      "Apply subtle glass on HUD containers to maintain visibility of the 3D scene behind them."
+    ],
+    "dont's": [
+      "Do not use glass for primary CTA buttons (Play, Retry, Next). They must be solid and chunky."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceInverse at 85% opacity"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Main Menu",
+      "purpose": "A bold entry point that establishes the construction-site theme and player progress.",
+      "states": {
+        "loading": "Centered hard-hat or warning-stripe spinner.",
+        "empty": "N/A",
+        "error": "Standard alert modal."
+      },
+      "layout": "Landscape full-screen. Left/Center: Huge 'WRECKWORKS' title in Fredoka, angled slightly with a drop shadow. Right side: A chunky 'WORLD 1: CONSTRUCTION SITE' card (brandSecondary / Warning Yellow) displaying progress '0/10 Levels'. Bottom Right: Oversized, pill-shaped 'PLAY' button in Safety Orange (brandPrimary)."
+    },
+    {
+      "name": "Level Selection",
+      "purpose": "Showcases 10 levels in a satisfying, tactile grid.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Landscape safe-area constrained. Top: Back button and 'Construction Site' header. Center: A 2-row by 5-column grid (or horizontal scroll if preferred) of chunky level tiles. Locked: Gray tile with padlock. Unlocked: Orange tile. Completed: Yellow tile with up to 3 stars. Tiles should feel raised with clear borders."
+    },
+    {
+      "name": "Gameplay HUD",
+      "purpose": "Minimalist interface overlay for the 3D physics game.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Edge-anchored to keep the center screen clear for aiming. Top-Left: Pause icon (pill-shaped glass container). Top-Right: Score / Stars progress bar. Bottom-Left: 'Shots Left' indicated by visually stacked cannonballs or structural elements. Interactions (aiming) handled by the GL canvas."
+    },
+    {
+      "name": "Level Complete Overlay",
+      "purpose": "Rewarding modal that blocks the game state, summarizing the player's success.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Centered large card (surfaceSecondary) over a full-screen dark glass overlay. Top of card: 3 oversized star slots (animated fill). Middle: Score breakdown (Objects Destroyed, Shots Used, Best Score) aligned clearly. Bottom: Split chunky buttons - 'RETRY' (brandTertiary) and 'NEXT LEVEL' (brandPrimary)."
+    }
+  ],
+  "images": {
+    "menu_sky_background": {
+      "url": "https://images.unsplash.com/photo-1664983208786-d2c5920783b1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxjbGVhciUyMHNreSUyMGNsb3VkcyUyMGNhcnRvb24lMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc4NjgwNjMyMHww&ixlib=rb-4.1.0&q=85",
+      "alt": "Blue sky with white clouds"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Enforce 'landscape' orientation in app configuration (app.json) and styling. No portrait layouts.",
+    "Implement chunky UI elements by stacking shadows or using bottom border widths (e.g., borderBottomWidth: 4, borderColor: '#CC4800' on the orange button) to mimic a 3D tactile button feel.",
+    "For the Level Select screen, use an oversized 2x5 grid or horizontal scrolling view. Clearly differentiate the 3 states: Locked (grayed out, icon), Current (pulsing/highlighted), Completed (shows 1-3 stars).",
+    "HUD must be safe-area aware. Use glass (`expo-blur`) for the HUD containers to ensure the game world remains partially visible beneath UI.",
+    "Use 'Fredoka' font for all headings, scores, and button text to emphasize the casual, playful aesthetic.",
+    "Level Complete overlay needs a dark scrim (glass + color tint at 85% opacity) covering the entire screen to block background interactions completely.",
+    "The warning stripe motif (yellow and black/dark gray diagonal lines) can be implemented via SVGs or Skia on headers/loading states to sell the Construction Site theme.",
+    "Do NOT use Angry Birds assets. Create original geometric UI shapes.",
+    "Ensure all interactive elements meet the minimum 44pt tap target requirement."
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "summary": "Frontend-only UI/navigation smoke tests for WreckWorks (Expo Router). Verified main menu, level select (10 tiles, L1 unlocked/L2-10 locked), game screen with 3D GLView canvas mount, HUD (Score, LVL, 5 shot dots, Pause), pause overlay (Resume/Retry/Quit), and navigation back to levels/menu. All 12 required flows PASS. 3D scene visibly renders cannon, block stack, ground, sky, aim reticle.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "app/game.tsx - hint banner",
+        "issue": "'DRAG TO AIM • RELEASE TO FIRE' hint is not visible on Level 1 first entry. hintVisible state is initialized true for levelId===1 but the hint text element was not detected in DOM (playwright text=DRAG TO AIM returned null) and not seen in screenshot. Likely rendering/z-order issue: hint uses position:absolute bottom:24 with maxWidth 380 and `marginHorizontal: 'auto' as any` (not valid RN style on web) which may collapse layout. Recommend using `left:0,right:0,alignItems:'center'` on parent or `alignSelf:'center'` instead of marginHorizontal auto.",
+        "testID": "N/A (no testID on hint)",
+        "priority": "LOW"
+      },
+      {
+        "component": "app/levels.tsx - back button",
+        "issue": "Playwright reported '[data-testid=back-button]' resolved to 2 elements (RN Web Pressable double-render) and first was flagged 'not visible' on second visit. Non-blocking — click works via .first. Consider wrapping in single native element or adding testID only on inner element.",
+        "testID": "back-button",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      { "screen": "game", "issues": ["THREE.Clock deprecation warning (use THREE.Timer)", "props.pointerEvents deprecated on RN Web — use style.pointerEvents", "textShadow* deprecated — use textShadow"] }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix hint banner visibility on Level 1 (replace marginHorizontal:'auto' with alignSelf:'center' or use flex parent).",
+    "Migrate pointerEvents prop to style.pointerEvents (game.tsx line ~98 & ~135).",
+    "Replace deprecated textShadow* individual props with unified textShadow (index.tsx title, game.tsx scoreValue).",
+    "Optionally swap THREE.Clock for THREE.Timer in GameScene."
+  ],
+  "critical_code_review_comments": [
+    "progress.ts cache is a module-level singleton — completeLevel mutates but returns same reference; UI re-fetch via useFocusEffect works, but be aware cache never invalidates across hot reloads.",
+    "game.tsx: `paused || !!result` prop to GameScene freezes physics but hint state does not reset when navigating back — fine since remount by levelKey resets.",
+    "All screens correctly use React Native primitives; all interactive elements have testIDs. Good coverage."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A", "frontend": "100% (12/12 required flows)" },
+  "seed_data_creation": "None. AsyncStorage progress starts fresh (0/10, 0/30 stars).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Landscape viewport 812x375 used. game-canvas testID is on the GLView. Physics/aim not tested (PanResponder drag not simulated). If gameplay validation needed, use mouse drag on canvas center and verify score increments + result overlay appears.",
+  "rca_of_issue": "Hint not visible RCA: `marginHorizontal: 'auto' as any` is not a valid React Native style property on web and gets stripped/ignored, combined with `left:0, right:0, position:absolute, maxWidth:380` the container likely stretches to full width making inner flexDirection:row content anchor left off-viewport. Fix: remove marginHorizontal auto, add `alignSelf:'center'` OR wrap in a full-width container using justifyContent:'center'."
+}
