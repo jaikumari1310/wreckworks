@@ -16,6 +16,7 @@ import { sfx } from './sfx';
 export interface GameEvents {
   onScoreChange: (score: number) => void;
   onShotFired: (shotsUsed: number) => void;
+  onChain: (count: number, sx: number, sy: number) => void;
   onLevelComplete: (result: { score: number; shotsUsed: number; destroyed: number; totalTargets: number }) => void;
   onFail: (result: { score: number; shotsUsed: number; destroyed: number; totalTargets: number }) => void;
 }
@@ -74,6 +75,17 @@ export function GameScene({
   const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
   const debrisPoolRef = useRef<{ mesh: THREE.Mesh; body: CANNON.Body; ttl: number }[]>([]);
+  // Game-feel + flow refs
+  const recoilRef = useRef(0);
+  const muzzleFlashRef = useRef<THREE.Mesh | null>(null);
+  const flashTtlRef = useRef(0);
+  const slowmoUntilRef = useRef(0);
+  const completeSentRef = useRef(false);
+  const pendingResultRef = useRef<{ cleared: boolean; data: any } | null>(null);
+  const zoomRef = useRef(0); // eased 0..1
+  const zoomActiveRef = useRef(false);
+  const zoomTargetRef = useRef(new THREE.Vector3(3.2, 1.5, 0));
+  const lastReportedChainRef = useRef(0);
 
   pausedRef.current = paused;
 
@@ -181,6 +193,17 @@ export function GameScene({
     shotsUsedRef.current += 1;
     destroyedThisShotRef.current = 0;
     comboFiredRef.current = false;
+    lastReportedChainRef.current = 0;
+    // Punchy launch feedback: cannon recoil + muzzle flash
+    recoilRef.current = 1;
+    flashTtlRef.current = 0.09;
+    if (muzzleFlashRef.current) {
+      muzzleFlashRef.current.position.copy(muzzle);
+      muzzleFlashRef.current.visible = true;
+      const fm = muzzleFlashRef.current.material as THREE.MeshBasicMaterial;
+      fm.opacity = 1;
+    }
+    shakeRef.current = Math.min(0.4, shakeRef.current + 0.12);
     sfx.play('fire');
     events.onShotFired(shotsUsedRef.current);
     aimRef.current.active = false;
@@ -224,6 +247,17 @@ export function GameScene({
     shotsUsedRef.current = 0;
     scoreRef.current = 0;
     completedRef.current = false;
+    completeSentRef.current = false;
+    pendingResultRef.current = null;
+    slowmoUntilRef.current = 0;
+    zoomActiveRef.current = false;
+    zoomRef.current = 0;
+    destroyedThisShotRef.current = 0;
+    comboFiredRef.current = false;
+    lastReportedChainRef.current = 0;
+    shakeRef.current = 0;
+    recoilRef.current = 0;
+    if (muzzleFlashRef.current) muzzleFlashRef.current.visible = false;
     events.onScoreChange(0);
     events.onShotFired(0);
 
@@ -249,9 +283,13 @@ export function GameScene({
         shape,
         position: new CANNON.Vec3(def.x, def.y, def.z ?? 0),
         material: new CANNON.Material({ friction: prof.friction, restitution: prof.restitution }),
-        linearDamping: 0.06,
-        angularDamping: 0.12,
+        linearDamping: 0.08,
+        angularDamping: 0.16,
       });
+      // Let resting structures settle & sleep for stability + perf.
+      body.allowSleep = true;
+      body.sleepSpeedLimit = 0.18;
+      body.sleepTimeLimit = 0.4;
       if (def.rot) {
         const q = new CANNON.Quaternion();
         q.setFromEuler(0, 0, def.rot);
@@ -402,11 +440,25 @@ export function GameScene({
       trajectoryDotsRef.current.push(dot);
     }
 
+    // Muzzle flash (billboard-ish glow shown briefly on fire)
+    const flash = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 12, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0 }),
+    );
+    flash.visible = false;
+    scene.add(flash);
+    muzzleFlashRef.current = flash;
+
     // Physics world
     const world = new CANNON.World({ gravity: new CANNON.Vec3(0, GRAVITY, 0) });
-    world.broadphase = new CANNON.NaiveBroadphase();
-    world.solver.iterations = 10;
+    world.broadphase = new CANNON.SAPBroadphase(world);
+    world.solver.iterations = 14;
     world.allowSleep = true;
+    // Consistent, low-bounce contacts to reduce jitter / excessive bouncing.
+    world.defaultContactMaterial.friction = 0.5;
+    world.defaultContactMaterial.restitution = 0.03;
+    world.defaultContactMaterial.contactEquationStiffness = 1e7;
+    world.defaultContactMaterial.contactEquationRelaxation = 4;
     worldRef.current = world;
 
     // Ground physics
@@ -420,6 +472,8 @@ export function GameScene({
 
   const startLoop = () => {
     const clock = new THREE.Clock();
+    const baseCam = { x: 3.2, y: 3.4, z: 10.5 };
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
     const render = () => {
       if (!glRef.current) return;
       const delta = Math.min(0.05, clock.getDelta());
@@ -427,17 +481,53 @@ export function GameScene({
       const renderer = rendererRef.current;
       const scene = sceneRef.current!;
       const camera = cameraRef.current!;
-      // apply camera shake
+
+      // Cannon recoil (barrel kicks back along -aim, eases home)
+      if (cannonMeshRef.current) {
+        recoilRef.current *= 0.82;
+        const a = aimRef.current.angle;
+        const kick = recoilRef.current * 0.28;
+        cannonMeshRef.current.position.set(
+          CANNON_POS.x - Math.cos(a) * kick,
+          CANNON_POS.y - Math.sin(a) * kick,
+          0,
+        );
+      }
+      // Muzzle flash decay
+      if (flashTtlRef.current > 0 && muzzleFlashRef.current) {
+        flashTtlRef.current -= delta;
+        const fm = muzzleFlashRef.current.material as THREE.MeshBasicMaterial;
+        fm.opacity = Math.max(0, flashTtlRef.current / 0.09);
+        const s = 1 + (1 - fm.opacity) * 0.8;
+        muzzleFlashRef.current.scale.set(s, s, s);
+        if (flashTtlRef.current <= 0) muzzleFlashRef.current.visible = false;
+      }
+
+      // Ease zoom toward target (used during final-collapse slow-mo)
+      const zTarget = zoomActiveRef.current ? 1 : 0;
+      zoomRef.current += (zTarget - zoomRef.current) * 0.12;
+      const z = zoomRef.current;
+
+      let camX = baseCam.x, camY = baseCam.y, camZ = baseCam.z;
+      let lookX = 3.2, lookY = 1.5, lookZ = 0;
+      if (z > 0.001) {
+        const t = zoomTargetRef.current;
+        camX = lerp(baseCam.x, t.x, 0.4 * z);
+        camY = lerp(baseCam.y, t.y + 1.4, 0.4 * z);
+        camZ = lerp(baseCam.z, 6.8, z);
+        lookX = lerp(3.2, t.x, z);
+        lookY = lerp(1.5, t.y, z);
+      }
+      // Camera shake (additive)
       if (shakeRef.current > 0.001) {
         const s = shakeRef.current;
-        camera.position.x = 3.2 + (Math.random() - 0.5) * s;
-        camera.position.y = 3.4 + (Math.random() - 0.5) * s;
-        camera.lookAt(3.2, 1.5, 0);
+        camX += (Math.random() - 0.5) * s;
+        camY += (Math.random() - 0.5) * s;
         shakeRef.current *= 0.85;
-      } else {
-        camera.position.set(3.2, 3.4, 10.5);
-        camera.lookAt(3.2, 1.5, 0);
       }
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(lookX, lookY, lookZ);
+
       renderer.render(scene, camera);
       glRef.current.endFrameEXP();
       rafRef.current = requestAnimationFrame(render);
@@ -447,11 +537,17 @@ export function GameScene({
 
   const step = (delta: number) => {
     const world = worldRef.current!;
-    world.step(1 / 60, delta, 4);
+    const camera = cameraRef.current!;
+    // Slow-mo during the winning collapse for extra drama.
+    const inSlowmo = completedRef.current && pendingResultRef.current?.cleared && Date.now() < slowmoUntilRef.current;
+    const factor = inSlowmo ? 0.32 : 1;
+    // Fine fixed timestep + generous substeps => no tunneling for the fast ball.
+    world.step(1 / 120, delta * factor, 10);
 
     // Sync blocks
     let destroyed = 0;
     let newlyDestroyed = 0;
+    let cx = 0, cy = 0;
     blocksRef.current.forEach(b => {
       b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);
       b.mesh.quaternion.set(b.body.quaternion.x, b.body.quaternion.y, b.body.quaternion.z, b.body.quaternion.w);
@@ -460,18 +556,17 @@ export function GameScene({
       const dy = b.body.position.y - b.initialPos.y;
       const disp = Math.sqrt(dx * dx + dy * dy);
       const fell = b.body.position.y < -1;
-      const wasDestroyed = b.destroyed;
       if (!b.destroyed && (fell || disp > 1.4)) {
         b.destroyed = true;
         newlyDestroyed += 1;
+        cx += b.body.position.x;
+        cy += b.body.position.y;
         if (b.def.isTarget) {
           scoreRef.current += 100;
         } else {
           scoreRef.current += 25;
         }
-        if (!wasDestroyed) {
-          events.onScoreChange(scoreRef.current);
-        }
+        events.onScoreChange(scoreRef.current);
       }
       if (b.def.isTarget && b.destroyed) destroyed += 1;
 
@@ -481,7 +576,7 @@ export function GameScene({
       }
     });
 
-    // Destruction audio + combo tracking
+    // Destruction audio + combo + CHAIN popup
     if (newlyDestroyed > 0) {
       destroyedThisShotRef.current += newlyDestroyed;
       if (newlyDestroyed >= 3) {
@@ -493,6 +588,16 @@ export function GameScene({
       if (!comboFiredRef.current && destroyedThisShotRef.current >= 4) {
         comboFiredRef.current = true;
         sfx.play('combo');
+      }
+      // Emit a CHAIN xN popup once the count is worth celebrating (2+)
+      if (destroyedThisShotRef.current >= 2 && destroyedThisShotRef.current > lastReportedChainRef.current) {
+        lastReportedChainRef.current = destroyedThisShotRef.current;
+        const acx = cx / newlyDestroyed;
+        const acy = cy / newlyDestroyed;
+        const v = new THREE.Vector3(acx, acy, 0).project(camera);
+        const sx = Math.min(0.9, Math.max(0.1, (v.x + 1) / 2));
+        const sy = Math.min(0.85, Math.max(0.12, (1 - v.y) / 2));
+        events.onChain(destroyedThisShotRef.current, sx, sy);
       }
     }
 
@@ -527,44 +632,51 @@ export function GameScene({
       return true;
     });
 
-    // Level complete when all targets destroyed
+    // --- Completion / fail flow --------------------------------
+    const ballActive = (b: { body: CANNON.Body }) =>
+      b.body.position.y > -1 && b.body.velocity.length() > 1.2;
+
     if (!completedRef.current) {
       if (destroyed >= totalTargets && totalTargets > 0) {
-        // Wait until scene has settled a bit (no active shot flying)
-        const activeBall = ballsRef.current.some(b => b.body.position.y > -1);
-        if (!activeBall || shotsUsedRef.current >= level.shots) {
+        // Trigger once the winning shot has landed (no fast-moving ball) OR shots are spent.
+        const anyActive = ballsRef.current.some(ballActive);
+        if (!anyActive || shotsUsedRef.current >= level.shots) {
           completedRef.current = true;
-          // Bonus for remaining shots
           const remaining = Math.max(0, level.shots - shotsUsedRef.current);
           scoreRef.current += remaining * 150;
           events.onScoreChange(scoreRef.current);
-          setTimeout(() => {
-            events.onLevelComplete({
-              score: scoreRef.current,
-              shotsUsed: shotsUsedRef.current,
-              destroyed,
-              totalTargets,
-            });
-          }, 900);
+          // Slow-mo + camera focus on the collapse, then transition.
+          const acx = cx > 0 && newlyDestroyed > 0 ? cx / newlyDestroyed : 3.4;
+          zoomTargetRef.current.set(isFinite(acx) ? acx : 3.4, 1.4, 0);
+          zoomActiveRef.current = true;
+          slowmoUntilRef.current = Date.now() + 600;
+          pendingResultRef.current = {
+            cleared: true,
+            data: { score: scoreRef.current, shotsUsed: shotsUsedRef.current, destroyed, totalTargets },
+          };
         }
       } else if (shotsUsedRef.current >= level.shots) {
-        // Wait until all balls at rest before failing
-        const settled = ballsRef.current.every(b => Math.abs(b.body.velocity.length()) < 0.4);
+        // Fail only after everything has come to rest.
+        const settled = ballsRef.current.every(b => b.body.velocity.length() < 0.6);
         if (settled) {
-          if (destroyed >= totalTargets) {
-            // covered above
-          } else {
-            completedRef.current = true;
-            setTimeout(() => {
-              events.onFail({
-                score: scoreRef.current,
-                shotsUsed: shotsUsedRef.current,
-                destroyed,
-                totalTargets,
-              });
-            }, 900);
-          }
+          completedRef.current = true;
+          slowmoUntilRef.current = Date.now() + 500;
+          pendingResultRef.current = {
+            cleared: false,
+            data: { score: scoreRef.current, shotsUsed: shotsUsedRef.current, destroyed, totalTargets },
+          };
         }
+      }
+    }
+
+    // Fire the pending result once slow-mo has played out.
+    if (completedRef.current && pendingResultRef.current && !completeSentRef.current) {
+      if (Date.now() >= slowmoUntilRef.current) {
+        completeSentRef.current = true;
+        const r = pendingResultRef.current;
+        zoomActiveRef.current = false;
+        if (r.cleared) events.onLevelComplete(r.data);
+        else events.onFail(r.data);
       }
     }
   };
