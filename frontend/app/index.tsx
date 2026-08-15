@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/src/game/theme';
 import { loadProgress, Progress } from '@/src/game/progress';
 import { LEVELS } from '@/src/game/levels';
+import { sfx } from '@/src/game/sfx';
 
 export default function MainMenu() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function MainMenu() {
 
           <Pressable
             testID="play-button"
-            onPress={() => router.push('/levels')}
+            onPress={() => { sfx.play('click'); router.push('/levels'); }}
             style={({ pressed }) => [styles.playBtn, pressed && styles.playBtnPressed]}
           >
             <Ionicons name="play" size={26} color="#FFFFFF" />

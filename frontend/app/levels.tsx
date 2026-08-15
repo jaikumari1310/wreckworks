@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/src/game/theme';
 import { loadProgress, Progress, getLevelRecord } from '@/src/game/progress';
 import { LEVELS } from '@/src/game/levels';
+import { sfx } from '@/src/game/sfx';
 
 export default function LevelSelect() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function LevelSelect() {
               key={lv.id}
               testID={`level-tile-${lv.id}`}
               disabled={locked}
-              onPress={() => router.push({ pathname: '/game', params: { levelId: String(lv.id) } })}
+              onPress={() => { sfx.play('click'); router.push({ pathname: '/game', params: { levelId: String(lv.id) } }); }}
               style={({ pressed }) => [
                 styles.tile,
                 locked && styles.tileLocked,

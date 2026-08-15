@@ -172,10 +172,12 @@ export function GameScene({
         shakeRef.current = Math.min(0.4, shakeRef.current + Math.min(0.35, impact / 60));
         // Small dust burst
         spawnDust(new THREE.Vector3(body.position.x, body.position.y, body.position.z));
+        sfx.play('impact');
       }
     });
 
     shotsUsedRef.current += 1;
+    sfx.play('fire');
     events.onShotFired(shotsUsedRef.current);
     aimRef.current.active = false;
     hideTrajectory();
@@ -445,6 +447,7 @@ export function GameScene({
 
     // Sync blocks
     let destroyed = 0;
+    let newlyDestroyed = 0;
     blocksRef.current.forEach(b => {
       b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);
       b.mesh.quaternion.set(b.body.quaternion.x, b.body.quaternion.y, b.body.quaternion.z, b.body.quaternion.w);
@@ -456,6 +459,7 @@ export function GameScene({
       const wasDestroyed = b.destroyed;
       if (!b.destroyed && (fell || disp > 1.4)) {
         b.destroyed = true;
+        newlyDestroyed += 1;
         if (b.def.isTarget) {
           scoreRef.current += 100;
         } else {
@@ -472,6 +476,13 @@ export function GameScene({
         b.mesh.visible = false;
       }
     });
+
+    // Destruction audio: big multi-block = collapse, otherwise a break/crack
+    if (newlyDestroyed >= 3) {
+      sfx.play('collapse');
+    } else if (newlyDestroyed > 0) {
+      sfx.play('break');
+    }
 
     // Sync balls
     ballsRef.current.forEach(ball => {

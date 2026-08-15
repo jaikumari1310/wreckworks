@@ -7,6 +7,7 @@ import { theme } from '@/src/game/theme';
 import { LEVELS } from '@/src/game/levels';
 import { GameScene } from '@/src/game/GameScene';
 import { completeLevel, loadProgress, getLevelRecord } from '@/src/game/progress';
+import { sfx } from '@/src/game/sfx';
 
 interface Result {
   score: number;
@@ -52,6 +53,7 @@ export default function GameScreen() {
     }
     setResult({ ...data, cleared, stars, bestScore });
     if (cleared) {
+      sfx.play('star');
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
     } else {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
@@ -70,6 +72,7 @@ export default function GameScreen() {
   }), [finalizeResult]);
 
   const restart = () => {
+    sfx.play('click');
     setResult(null);
     setScore(0);
     setShots(0);
@@ -78,6 +81,7 @@ export default function GameScreen() {
   };
 
   const goNext = () => {
+    sfx.play('click');
     if (levelId >= LEVELS.length) {
       router.replace('/levels');
       return;
@@ -99,7 +103,7 @@ export default function GameScreen() {
         <View style={styles.hudLeft}>
           <Pressable
             testID="pause-button"
-            onPress={() => setPaused(p => !p)}
+            onPress={() => { sfx.play('click'); setPaused(p => !p); }}
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
           >
             <Ionicons name={paused ? 'play' : 'pause'} size={18} color="#FFFFFF" />
