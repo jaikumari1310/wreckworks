@@ -175,10 +175,10 @@ export const LEVELS: LevelDef[] = [
       // Base
       { x: 2.5, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
       { x: 4.5, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
-      { x: 3.5, y: 1.1, w: 2.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 3.5, y: 1.15, w: 2.4, h: 0.3, material: MAT.wood, isTarget: true },
       // Middle floor
-      { x: 2.8, y: 1.7, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
-      { x: 4.2, y: 1.7, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
+      { x: 2.8, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
+      { x: 4.2, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
       { x: 3.5, y: 2.35, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
       // Top
       { x: 3.5, y: 2.9, w: 0.9, h: 0.8, material: MAT.crate, isTarget: true },

@@ -37,3 +37,13 @@ wood, brick, concrete, metal, crate — each with distinct mass, color, friction
 
 ## Not in Prototype
 Ads, IAP, accounts, multiplayer, leaderboards, cloud save, multiple weapons, multiple worlds, backend, login. Audio placeholders only (game playable without audio).
+
+## Polish Pass (Priorities 1–10) — Done
+- **Game feel**: cannon recoil, muzzle flash, tuned camera shake, dust on impact
+- **Chain popup**: animated "CHAIN xN" near destruction when 2+ blocks fall from one shot (color/size scales with N)
+- **Final collapse**: ~0.6s slow-motion + slight camera zoom before the result appears
+- **Result sequence**: card pop-in, score count-up, stars appear one-by-one, NEW BEST badge, dominant NEXT LEVEL
+- **Star clarity**: HUD "PAR N SHOTS" indicator (3-star target)
+- **Tutorial**: animated drag-hand + arrow on Level 1, disappears after first real shot
+- **Physics stability**: fixed timestep 1/120 with 10 substeps (no tunneling), SAP broadphase, 14 solver iterations, low-restitution contacts, block sleep, fixed Level-10 spawn overlaps (no pre-fire collapse)
+- Verified by testing agent (iteration 3): 11/11 after tutorial-hint guard fix.

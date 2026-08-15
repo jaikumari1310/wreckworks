@@ -9,16 +9,11 @@ import { GameScene } from '@/src/game/GameScene';
 import { completeLevel, loadProgress, getLevelRecord } from '@/src/game/progress';
 import { sfx } from '@/src/game/sfx';
 import { useSound } from '@/src/game/useSound';
+import { ChainPopup, ChainData } from '@/src/game/ChainPopup';
+import { ResultOverlay, ResultData } from '@/src/game/ResultOverlay';
+import { TutorialHint } from '@/src/game/TutorialHint';
 
-interface Result {
-  score: number;
-  shotsUsed: number;
-  destroyed: number;
-  totalTargets: number;
-  cleared: boolean;
-  stars: number;
-  bestScore: number;
-}
+type Result = ResultData;
 
 export default function GameScreen() {
   const params = useLocalSearchParams<{ levelId?: string }>();
@@ -33,6 +28,7 @@ export default function GameScreen() {
   const [result, setResult] = useState<Result | null>(null);
   const [hintVisible, setHintVisible] = useState(levelId === 1);
   const [levelKey, setLevelKey] = useState(0); // remount to reset scene
+  const [chain, setChain] = useState<ChainData | null>(null);
   const { enabled: soundOn, toggle: toggleSound } = useSound();
 
   const finalizeResult = useCallback(async (data: { score: number; shotsUsed: number; destroyed: number; totalTargets: number }, cleared: boolean) => {
@@ -44,15 +40,16 @@ export default function GameScreen() {
       else if (data.shotsUsed <= t.two) stars = 2;
       else stars = 1;
     }
-    let bestScore = 0;
+    // Read previous best BEFORE saving to detect a new best.
+    const prev = getLevelRecord(await loadProgress(), level.id);
+    const isNewBest = cleared && data.score > prev.bestScore;
+    let bestScore = prev.bestScore;
     if (cleared) {
       const p = await completeLevel(level.id, stars, data.score, data.shotsUsed);
       bestScore = getLevelRecord(p, level.id).bestScore;
-    } else {
-      const p = await loadProgress();
-      bestScore = getLevelRecord(p, level.id).bestScore;
     }
-    setResult({ ...data, cleared, stars, bestScore });
+    setChain(null);
+    setResult({ ...data, cleared, stars, bestScore, isNewBest });
     if (cleared) {
       sfx.play('star');
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
@@ -65,8 +62,14 @@ export default function GameScreen() {
     onScoreChange: (s: number) => setScore(s),
     onShotFired: (n: number) => {
       setShots(n);
-      setHintVisible(false);
-      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+      if (n > 0) {
+        setHintVisible(false);
+        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
+      }
+    },
+    onChain: (count: number, sx: number, sy: number) => {
+      setChain({ count, x: sx, y: sy, id: Date.now() });
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     },
     onLevelComplete: (r: any) => finalizeResult(r, true),
     onFail: (r: any) => finalizeResult(r, false),
@@ -75,8 +78,10 @@ export default function GameScreen() {
   const restart = () => {
     sfx.play('click');
     setResult(null);
+    setChain(null);
     setScore(0);
     setShots(0);
+    setPaused(false);
     setLevelKey(k => k + 1);
     setHintVisible(levelId === 1);
   };
@@ -87,12 +92,14 @@ export default function GameScreen() {
       router.replace('/levels');
       return;
     }
-    setLevelId(levelId + 1);
+    const next = levelId + 1;
+    setLevelId(next);
     setResult(null);
+    setChain(null);
     setScore(0);
     setShots(0);
     setLevelKey(k => k + 1);
-    setHintVisible(false);
+    setHintVisible(next === 1);
   };
 
   return (
@@ -118,6 +125,12 @@ export default function GameScreen() {
         <View style={styles.hudCenter}>
           <Text style={styles.scoreLabel}>SCORE</Text>
           <Text style={styles.scoreValue} testID="score-value">{score.toLocaleString()}</Text>
+          <View style={styles.parPill} testID="par-indicator">
+            <Ionicons name="star" size={11} color={theme.color.star} />
+            <Ionicons name="star" size={11} color={theme.color.star} />
+            <Ionicons name="star" size={11} color={theme.color.star} />
+            <Text style={styles.parText}>PAR {level.starThresholds.three} SHOT{level.starThresholds.three > 1 ? 'S' : ''}</Text>
+          </View>
         </View>
 
         <View style={styles.hudRight}>
@@ -135,13 +148,13 @@ export default function GameScreen() {
         </View>
       </View>
 
-      {/* Hint */}
-      {hintVisible && (
-        <View style={styles.hint} pointerEvents="none">
-          <Ionicons name="hand-left" size={26} color="#FFFFFF" />
-          <Text style={styles.hintText}>DRAG TO AIM   •   RELEASE TO FIRE</Text>
-        </View>
+      {/* Chain reaction popup */}
+      {chain && !result && (
+        <ChainPopup data={chain} onDone={() => setChain(c => (c && c.id === chain.id ? null : c))} />
       )}
+
+      {/* Level 1 tutorial */}
+      {hintVisible && !result && <TutorialHint />}
 
       {/* Pause overlay */}
       {paused && !result && (
@@ -174,59 +187,17 @@ export default function GameScreen() {
         </View>
       )}
 
-      {/* Result overlay */}
+      {/* Result overlay (animated) */}
       {result && (
-        <View style={styles.overlay} testID="result-overlay">
-          <View style={styles.resultCard}>
-            <Text style={[styles.resultTitle, !result.cleared && { color: theme.color.error }]}>
-              {result.cleared ? 'LEVEL COMPLETE' : 'LEVEL FAILED'}
-            </Text>
-            <View style={styles.starsBig}>
-              {[1, 2, 3].map(i => (
-                <Ionicons
-                  key={i}
-                  name="star"
-                  size={44}
-                  color={result.stars >= i ? theme.color.star : 'rgba(0,0,0,0.15)'}
-                  style={i === 2 ? { transform: [{ translateY: -8 }] } : undefined}
-                />
-              ))}
-            </View>
-            <View style={styles.statsRow}>
-              <Stat label="SCORE" value={result.score.toLocaleString()} />
-              <Stat label="DESTROYED" value={`${result.destroyed}/${result.totalTargets}`} />
-              <Stat label="SHOTS" value={`${result.shotsUsed}/${level.shots}`} />
-              <Stat label="BEST" value={result.bestScore.toLocaleString()} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
-              <Pressable style={[styles.overlayBtn, styles.overlayBtnTertiary]} onPress={restart} testID="retry-button">
-                <Ionicons name="refresh" size={18} color="#FFFFFF" />
-                <Text style={styles.overlayBtnText}>RETRY</Text>
-              </Pressable>
-              {result.cleared ? (
-                <Pressable style={[styles.overlayBtn, styles.overlayBtnPrimary]} onPress={goNext} testID="next-button">
-                  <Text style={styles.overlayBtnText}>NEXT</Text>
-                  <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
-                </Pressable>
-              ) : (
-                <Pressable style={[styles.overlayBtn, styles.overlayBtnPrimary]} onPress={() => router.replace('/levels')} testID="menu-button">
-                  <Ionicons name="list" size={18} color="#FFFFFF" />
-                  <Text style={styles.overlayBtnText}>LEVELS</Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </View>
+        <ResultOverlay
+          result={result}
+          levelShots={level.shots}
+          isLastLevel={levelId >= LEVELS.length}
+          onRetry={restart}
+          onNext={goNext}
+          onMenu={() => router.replace('/levels')}
+        />
       )}
-    </View>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.statBox}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
     </View>
   );
 }
@@ -255,6 +226,11 @@ const styles = StyleSheet.create({
   levelPillNum: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
   scoreLabel: { color: '#111827', fontSize: 10, fontWeight: '900', letterSpacing: 1.5, backgroundColor: theme.color.brandSecondary, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
   scoreValue: { fontSize: 26, fontWeight: '900', color: '#111827', textShadowColor: 'rgba(255,255,255,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  parPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 4,
+    backgroundColor: 'rgba(17,24,39,0.7)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999,
+  },
+  parText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1, marginLeft: 3 },
   shotsBox: {
     backgroundColor: 'rgba(17,24,39,0.85)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16,
     borderBottomWidth: 3, borderColor: '#000', alignItems: 'flex-end',

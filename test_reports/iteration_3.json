@@ -1,0 +1,35 @@
+{
+  "summary": "WreckWorks gameplay-polish pass frontend testing. Landscape mobile viewport 812x375. MOST features PASS: HUD par-indicator ('PAR 2 SHOTS'), aiming via mouse press-drag-release fires the cannonball, tower topples on impact (no pre-fire collapse, no tunneling observed), CHAIN xN popup appears on multi-block shots (verified CHAIN x2 on Level 1 shot 1), animated ResultOverlay shows LEVEL COMPLETE title, 3 stars, animated score count-up (result-score = 750), NEW BEST badge, DESTROYED 3/3, SHOTS 2/5, BEST, RETRY and NEXT LEVEL buttons. NEXT LEVEL loads Level 2 correctly (LVL badge flips to 2, score resets to 0, structure standing). Pause overlay + resume works. Level 5 and Level 10 load with structures standing (no pre-fire collapse). Progression persists via AsyncStorage/localStorage across reload (Level 2 unlocked after reload). Slow-mo + zoom on final collapse works (~600ms delay before overlay). No red-screen or runtime console errors captured. ONE BUG FOUND: Level 1 tutorial-hint never visible (see rca_of_issue).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TutorialHint",
+        "issue": "tutorial-hint element is never visible on Level 1. Root cause: GameScene.buildLevel() calls events.onShotFired(0) on init (GameScene.tsx line ~262), and game.tsx onShotFired handler unconditionally calls setHintVisible(false) regardless of n. So the hint is hidden immediately on scene mount, before the user shoots. Reference: /app/frontend/app/game.tsx lines 63-67 and /app/frontend/src/game/GameScene.tsx line 262.",
+        "testID": "tutorial-hint",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "FIX: In /app/frontend/app/game.tsx onShotFired handler, guard the setHintVisible(false) call so it only fires when n > 0 (i.e. an actual shot was fired). Example: onShotFired: (n) => { setShots(n); if (n > 0) setHintVisible(false); ... }. This will let the animated TutorialHint (drag hand + DRAG TO AIM / RELEASE TO FIRE badge) actually appear on Level 1 until the first real shot."
+  ],
+  "critical_code_review_comments": [
+    "GameScene.tsx: fixed timestep 1/120 with 10 substeps + SAP broadphase + 14 solver iterations look correct for stability. Low restitution defaults reduce jitter. Sleep params on blocks are sensible.",
+    "Slow-mo + zoom-in on cleared level implemented cleanly (slowmoUntilRef + pendingResultRef flush after Date.now() >= slowmoUntilRef). Good.",
+    "ChainPopup lifecycle: parent updates chain state via events.onChain and clears on ChainPopup.onDone; the guard `c && c.id === chain.id` prevents clearing a newer popup — good.",
+    "ResultOverlay animated score count-up and one-by-one star pop-in look correct; timers cleaned up on unmount.",
+    "progress.ts uses module-level `cache` — beware after AsyncStorage.clear() from devtools the in-memory cache may be stale until reload. Not a bug for players, but worth noting."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A (frontend-only)", "frontend": "10/11 acceptance criteria PASS (~91%)" },
+  "seed_data_creation": "Cleared localStorage before test to simulate fresh install.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Tested at https://wreckworks-demo.preview.emergentagent.com/ in landscape viewport 812x375. To fire in tests, use page.mouse.down at canvas center then move by (-130..-150, +110..+115) in ~14 steps then mouse.up (drag distance must exceed 18px). Level 1 completes in 2 shots for 3 stars. CHAIN x2 confirmed on Level 1 shot 1 (destroys 2 wood blocks of the stack). result-overlay appears ~2-3s after the final target falls due to 600ms slow-mo. testIDs verified live: game-canvas, pause-button, pause-overlay, resume-button, quit-button, par-indicator, chain-popup, result-overlay, result-score, retry-button, next-button, score-value, level-tile-N, play-button, back-button. Only tutorial-hint fails to appear — see rca_of_issue.",
+  "rca_of_issue": "BUG: TutorialHint invisible on Level 1. REPRO: fresh install (clear localStorage) -> Play -> Level 1 -> observe HUD; expected animated hand + 'DRAG TO AIM ... RELEASE TO FIRE' badge; actual: no hint element. RCA: In /app/frontend/src/game/GameScene.tsx buildLevel() (~line 262) calls events.onShotFired(0) to reset the HUD shots counter. In /app/frontend/app/game.tsx (lines 63-67) the onShotFired handler does `setShots(n); setHintVisible(false); Haptics...` without a guard — so on scene mount hintVisible flips to false immediately. FIX: guard `if (n > 0) setHintVisible(false)` (and consider also skipping haptics when n === 0). MITIGATION: main agent applies the guard; retest by loading /game?levelId=1 fresh and asserting tutorial-hint is visible, then firing one shot and asserting it disappears."
+}
