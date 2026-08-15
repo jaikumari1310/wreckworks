@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,10 +6,12 @@ import { theme } from '@/src/game/theme';
 import { loadProgress, Progress } from '@/src/game/progress';
 import { LEVELS } from '@/src/game/levels';
 import { sfx } from '@/src/game/sfx';
+import { useSound } from '@/src/game/useSound';
 
 export default function MainMenu() {
   const router = useRouter();
   const [progress, setProgress] = useState<Progress | null>(null);
+  const { enabled: soundOn, toggle: toggleSound } = useSound();
 
   useFocusEffect(useCallback(() => {
     loadProgress().then(setProgress);
@@ -24,6 +26,16 @@ export default function MainMenu() {
       resizeMode="cover"
     >
       <View style={styles.overlay} />
+
+      {/* Sound toggle (top-right) */}
+      <Pressable
+        testID="sound-toggle-menu"
+        onPress={() => { sfx.play('click'); toggleSound(); }}
+        style={({ pressed }) => [styles.soundBtn, pressed && { transform: [{ translateY: 2 }], borderBottomWidth: 2 }]}
+      >
+        <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={20} color="#FFFFFF" />
+      </Pressable>
+
       {/* Warning stripe strip */}
       <View style={styles.stripeStrip}>
         {Array.from({ length: 40 }).map((_, i) => (
@@ -80,6 +92,12 @@ export default function MainMenu() {
 const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: theme.color.sky },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(126, 200, 240, 0.35)' },
+  soundBtn: {
+    position: 'absolute', top: 16, right: 20, zIndex: 10,
+    width: 44, height: 44, borderRadius: 999,
+    backgroundColor: 'rgba(17,24,39,0.85)', alignItems: 'center', justifyContent: 'center',
+    borderBottomWidth: 4, borderColor: '#000',
+  },
   stripeStrip: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 18, flexDirection: 'row' },
   stripe: { flex: 1, transform: [{ skewX: '-30deg' }] },
   content: { flex: 1, flexDirection: 'row', paddingHorizontal: 32, paddingVertical: 24, alignItems: 'center' },

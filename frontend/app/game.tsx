@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -8,6 +8,7 @@ import { LEVELS } from '@/src/game/levels';
 import { GameScene } from '@/src/game/GameScene';
 import { completeLevel, loadProgress, getLevelRecord } from '@/src/game/progress';
 import { sfx } from '@/src/game/sfx';
+import { useSound } from '@/src/game/useSound';
 
 interface Result {
   score: number;
@@ -32,7 +33,7 @@ export default function GameScreen() {
   const [result, setResult] = useState<Result | null>(null);
   const [hintVisible, setHintVisible] = useState(levelId === 1);
   const [levelKey, setLevelKey] = useState(0); // remount to reset scene
-  const bestScoreRef = useRef(0);
+  const { enabled: soundOn, toggle: toggleSound } = useSound();
 
   const finalizeResult = useCallback(async (data: { score: number; shotsUsed: number; destroyed: number; totalTargets: number }, cleared: boolean) => {
     // Compute stars
@@ -147,6 +148,14 @@ export default function GameScreen() {
         <View style={styles.overlay} testID="pause-overlay">
           <View style={styles.pauseCard}>
             <Text style={styles.pauseTitle}>PAUSED</Text>
+            <Pressable
+              testID="sound-toggle-pause"
+              onPress={() => { sfx.play('click'); toggleSound(); }}
+              style={({ pressed }) => [styles.pauseSoundRow, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={20} color="#111827" />
+              <Text style={styles.pauseSoundText}>SOUND: {soundOn ? 'ON' : 'OFF'}</Text>
+            </Pressable>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <Pressable style={[styles.overlayBtn, styles.overlayBtnSecondary]} onPress={() => setPaused(false)} testID="resume-button">
                 <Ionicons name="play" size={18} color="#FFFFFF" />
@@ -275,6 +284,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 6, borderColor: '#111827',
   },
   pauseTitle: { fontSize: 28, fontWeight: '900', color: '#111827', letterSpacing: 2 },
+  pauseSoundRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: '#F3F4F6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
+  },
+  pauseSoundText: { color: '#111827', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
   resultCard: {
     backgroundColor: '#FFFFFF', borderRadius: 22, padding: 20, alignItems: 'center', gap: 14,
     borderBottomWidth: 6, borderColor: '#111827', minWidth: 460,

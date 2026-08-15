@@ -68,6 +68,8 @@ export function GameScene({
   const shotsUsedRef = useRef(0);
   const scoreRef = useRef(0);
   const completedRef = useRef(false);
+  const destroyedThisShotRef = useRef(0);
+  const comboFiredRef = useRef(false);
   const aimRef = useRef<AimState>({ active: false, angle: Math.PI / 4, power: 0.5, dx: 0, dy: 0 });
   const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
@@ -177,6 +179,8 @@ export function GameScene({
     });
 
     shotsUsedRef.current += 1;
+    destroyedThisShotRef.current = 0;
+    comboFiredRef.current = false;
     sfx.play('fire');
     events.onShotFired(shotsUsedRef.current);
     aimRef.current.active = false;
@@ -477,11 +481,19 @@ export function GameScene({
       }
     });
 
-    // Destruction audio: big multi-block = collapse, otherwise a break/crack
-    if (newlyDestroyed >= 3) {
-      sfx.play('collapse');
-    } else if (newlyDestroyed > 0) {
-      sfx.play('break');
+    // Destruction audio + combo tracking
+    if (newlyDestroyed > 0) {
+      destroyedThisShotRef.current += newlyDestroyed;
+      if (newlyDestroyed >= 3) {
+        sfx.collapse();
+      } else {
+        sfx.play('break');
+      }
+      // Chain-reaction jingle: 4+ blocks from a single shot
+      if (!comboFiredRef.current && destroyedThisShotRef.current >= 4) {
+        comboFiredRef.current = true;
+        sfx.play('combo');
+      }
     }
 
     // Sync balls
@@ -584,8 +596,12 @@ export function GameScene({
     },
   }), [paused]);
 
-  useEffect(() => () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  useEffect(() => {
+    sfx.startAmbient();
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      sfx.stopAmbient();
+    };
   }, []);
 
   // Rebuild when level changes
