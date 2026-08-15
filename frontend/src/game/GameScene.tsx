@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { View, StyleSheet, PanResponder, LayoutChangeEvent, Text, Platform } from 'react-native';
 import { LevelDef, BlockDef, MATERIAL_PROFILE, BlockMaterial } from './levels';
 import { theme } from './theme';
+import { sfx } from './sfx';
 
 export interface GameEvents {
   onScoreChange: (score: number) => void;
