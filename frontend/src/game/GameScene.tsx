@@ -29,6 +29,15 @@ interface AimState {
   dy: number;
 }
 
+interface VisualParticle {
+  mesh: THREE.Mesh;
+  vx: number;
+  vy: number;
+  vz: number;
+  ttl: number;
+  maxTtl: number;
+}
+
 interface DynamicBlock {
   def: BlockDef;
   mesh: THREE.Mesh;
@@ -41,6 +50,7 @@ const MAX_POWER = 22; // m/s
 const GRAVITY = -18;
 const CANNON_POS = new THREE.Vector3(-1.0, 0.9, 0);
 const BARREL_LEN = 0.9;
+const FIRE_COOLDOWN_MS = 600; // Minimum time between consecutive shots
 
 export interface GameSceneHandle {
   reset: () => void;
@@ -62,7 +72,7 @@ export function GameScene({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const worldRef = useRef<CANNON.World | null>(null);
   const blocksRef = useRef<DynamicBlock[]>([]);
-  const ballsRef = useRef<{ mesh: THREE.Mesh; body: CANNON.Body; birth: number }[]>([]);
+  const ballsRef = useRef<{ mesh: THREE.Mesh; body: CANNON.Body; birth: number; lastImpact: number }[]>([]);
   const trajectoryDotsRef = useRef<THREE.Mesh[]>([]);
   const cannonMeshRef = useRef<THREE.Group | null>(null);
   const shakeRef = useRef(0);
@@ -74,7 +84,9 @@ export function GameScene({
   const aimRef = useRef<AimState>({ active: false, angle: Math.PI / 4, power: 0.5, dx: 0, dy: 0 });
   const rafRef = useRef<number | null>(null);
   const pausedRef = useRef(false);
-  const debrisPoolRef = useRef<{ mesh: THREE.Mesh; body: CANNON.Body; ttl: number }[]>([]);
+  const particlesRef = useRef<VisualParticle[]>([]);
+  const lastFireTimeRef = useRef(0);
+  const dustGeoRef = useRef<THREE.DodecahedronGeometry | null>(null);
   // Game-feel + flow refs
   const recoilRef = useRef(0);
   const muzzleFlashRef = useRef<THREE.Mesh | null>(null);
@@ -157,6 +169,17 @@ export function GameScene({
   const fire = () => {
     if (completedRef.current) return;
     if (shotsUsedRef.current >= level.shots) return;
+
+    // 1. Firing cooldown check (prevents accidental rapid fire / overlapping balls)
+    const now = Date.now();
+    if (now - lastFireTimeRef.current < FIRE_COOLDOWN_MS) return;
+
+    // 2. In-flight ball limit (max 2 active moving cannonballs at once)
+    const activeInFlight = ballsRef.current.filter(b => b.body.position.y > -1 && b.body.velocity.length() > 1.2).length;
+    if (activeInFlight >= 2) return;
+
+    lastFireTimeRef.current = now;
+
     const world = worldRef.current!;
     const scene = sceneRef.current!;
     const muzzle = computeMuzzle();
@@ -164,7 +187,7 @@ export function GameScene({
 
     // Cannonball
     const radius = 0.28;
-    const geo = new THREE.SphereGeometry(radius, 20, 16);
+    const geo = new THREE.SphereGeometry(radius, 16, 12);
     const mat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.35, metalness: 0.6 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(muzzle);
@@ -177,14 +200,18 @@ export function GameScene({
     body.angularDamping = 0.1;
     body.material = new CANNON.Material({ friction: 0.35, restitution: 0.25 });
     world.addBody(body);
-    ballsRef.current.push({ mesh, body, birth: Date.now() });
 
-    // Collision handler for impact effects
+    const ballEntry = { mesh, body, birth: Date.now(), lastImpact: 0 };
+    ballsRef.current.push(ballEntry);
+
+    // Collision handler with debouncing and lightweight visual particles
     body.addEventListener('collide', (ev: any) => {
+      const impactTime = Date.now();
+      if (impactTime - ballEntry.lastImpact < 80) return; // Debounce impacts
       const impact = ev.contact.getImpactVelocityAlongNormal();
-      if (impact > 3) {
-        shakeRef.current = Math.min(0.4, shakeRef.current + Math.min(0.35, impact / 60));
-        // Small dust burst
+      if (impact > 3.0) {
+        ballEntry.lastImpact = impactTime;
+        shakeRef.current = Math.min(0.35, shakeRef.current + Math.min(0.25, impact / 60));
         spawnDust(new THREE.Vector3(body.position.x, body.position.y, body.position.z));
         sfx.play('impact');
       }
@@ -203,30 +230,34 @@ export function GameScene({
       const fm = muzzleFlashRef.current.material as THREE.MeshBasicMaterial;
       fm.opacity = 1;
     }
-    shakeRef.current = Math.min(0.4, shakeRef.current + 0.12);
+    shakeRef.current = Math.min(0.35, shakeRef.current + 0.1);
     sfx.play('fire');
     events.onShotFired(shotsUsedRef.current);
     aimRef.current.active = false;
     hideTrajectory();
   };
 
+  // Purely visual dust particles (Zero CANNON bodies, lightweight kinematics)
   const spawnDust = (at: THREE.Vector3) => {
     const scene = sceneRef.current;
     if (!scene) return;
-    for (let i = 0; i < 6; i++) {
-      const g = new THREE.SphereGeometry(0.06 + Math.random() * 0.04, 6, 4);
-      const m = new THREE.MeshBasicMaterial({ color: 0xd6c39a, transparent: true, opacity: 0.85 });
-      const mesh = new THREE.Mesh(g, m);
-      mesh.position.set(at.x + (Math.random() - 0.5) * 0.3, at.y + Math.random() * 0.2, at.z + (Math.random() - 0.5) * 0.3);
+    if (!dustGeoRef.current) {
+      dustGeoRef.current = new THREE.DodecahedronGeometry(0.06, 0);
+    }
+    const geo = dustGeoRef.current;
+    for (let i = 0; i < 4; i++) {
+      const mat = new THREE.MeshBasicMaterial({ color: 0xd6c39a, transparent: true, opacity: 0.85 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(
+        at.x + (Math.random() - 0.5) * 0.25,
+        at.y + Math.random() * 0.2,
+        at.z + (Math.random() - 0.5) * 0.25
+      );
       scene.add(mesh);
-      const vx = (Math.random() - 0.5) * 2.5;
-      const vy = 1 + Math.random() * 2;
-      // fake body: reuse debris list with ttl for animation via cannon body
-      const body = new CANNON.Body({ mass: 0.05, shape: new CANNON.Sphere(0.06), position: new CANNON.Vec3(mesh.position.x, mesh.position.y, mesh.position.z) });
-      body.velocity.set(vx, vy, 0);
-      body.collisionResponse = false;
-      worldRef.current!.addBody(body);
-      debrisPoolRef.current.push({ mesh, body, ttl: 0.9 });
+      const vx = (Math.random() - 0.5) * 2.2;
+      const vy = 1.0 + Math.random() * 1.8;
+      const vz = (Math.random() - 0.5) * 1.0;
+      particlesRef.current.push({ mesh, vx, vy, vz, ttl: 0.65, maxTtl: 0.65 });
     }
   };
 
@@ -239,10 +270,18 @@ export function GameScene({
     // Remove old blocks
     blocksRef.current.forEach(b => { scene.remove(b.mesh); world.removeBody(b.body); });
     blocksRef.current = [];
-    ballsRef.current.forEach(b => { scene.remove(b.mesh); world.removeBody(b.body); });
+    ballsRef.current.forEach(b => {
+      scene.remove(b.mesh);
+      b.mesh.geometry.dispose();
+      (b.mesh.material as THREE.Material).dispose();
+      world.removeBody(b.body);
+    });
     ballsRef.current = [];
-    debrisPoolRef.current.forEach(d => { scene.remove(d.mesh); world.removeBody(d.body); });
-    debrisPoolRef.current = [];
+    particlesRef.current.forEach(p => {
+      scene.remove(p.mesh);
+      (p.mesh.material as THREE.Material).dispose();
+    });
+    particlesRef.current = [];
 
     shotsUsedRef.current = 0;
     scoreRef.current = 0;
@@ -517,8 +556,8 @@ export function GameScene({
     // Slow-mo during the winning collapse for extra drama.
     const inSlowmo = completedRef.current && pendingResultRef.current?.cleared && Date.now() < slowmoUntilRef.current;
     const factor = inSlowmo ? 0.32 : 1;
-    // Fine fixed timestep + generous substeps => no tunneling for the fast ball.
-    world.step(1 / 120, delta * factor, 10);
+    // Fine fixed timestep + strictly capped substeps (never stalls the JS event loop)
+    world.step(1 / 60, Math.min(0.04, delta * factor), 3);
 
     // Sync blocks
     let destroyed = 0;
@@ -585,24 +624,30 @@ export function GameScene({
     // Cleanup old balls
     ballsRef.current = ballsRef.current.filter(ball => {
       const age = Date.now() - ball.birth;
-      if (age > 5000 || ball.body.position.y < -6 || ball.body.position.x > 20) {
-        sceneRef.current!.remove(ball.mesh);
-        worldRef.current!.removeBody(ball.body);
+      if (age > 4500 || ball.body.position.y < -5 || ball.body.position.x > 18) {
+        sceneRef.current?.remove(ball.mesh);
+        ball.mesh.geometry.dispose();
+        (ball.mesh.material as THREE.Material).dispose();
+        worldRef.current?.removeBody(ball.body);
         return false;
       }
       return true;
     });
-    // Debris
-    debrisPoolRef.current.forEach(d => {
-      d.ttl -= delta;
-      d.mesh.position.set(d.body.position.x, d.body.position.y, d.body.position.z);
-      const mat = d.mesh.material as THREE.MeshBasicMaterial;
-      mat.opacity = Math.max(0, d.ttl);
+
+    // Visual particles update (Zero physics bodies, instant CPU calculation)
+    particlesRef.current.forEach(p => {
+      p.ttl -= delta;
+      p.vy -= 14 * delta;
+      p.mesh.position.x += p.vx * delta;
+      p.mesh.position.y += p.vy * delta;
+      p.mesh.position.z += p.vz * delta;
+      const mat = p.mesh.material as THREE.MeshBasicMaterial;
+      mat.opacity = Math.max(0, (p.ttl / p.maxTtl) * 0.85);
     });
-    debrisPoolRef.current = debrisPoolRef.current.filter(d => {
-      if (d.ttl <= 0) {
-        sceneRef.current!.remove(d.mesh);
-        worldRef.current!.removeBody(d.body);
+    particlesRef.current = particlesRef.current.filter(p => {
+      if (p.ttl <= 0 || p.mesh.position.y < -1) {
+        sceneRef.current?.remove(p.mesh);
+        (p.mesh.material as THREE.Material).dispose();
         return false;
       }
       return true;
