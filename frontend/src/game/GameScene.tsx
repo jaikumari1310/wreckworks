@@ -400,7 +400,21 @@ export function GameScene({
       const isExplosive = def.isExplosive || prof.isExplosive;
 
       let mesh: THREE.Mesh;
-      if (def.material === 'explosive_barrel') {
+      let shape: CANNON.Shape;
+      const isSphere = def.isSphere || def.material === 'heavy_ball' || prof.isSphere;
+
+      if (isSphere) {
+        // High-mass dark cast iron rolling cannonball / anchor boulder
+        const radius = w / 2;
+        const sphereGeo = new THREE.SphereGeometry(radius, 18, 14);
+        const sphereMat = new THREE.MeshStandardMaterial({
+          color: 0x1e293b,
+          roughness: 0.25,
+          metalness: 0.85,
+        });
+        mesh = new THREE.Mesh(sphereGeo, sphereMat);
+        shape = new CANNON.Sphere(radius);
+      } else if (def.material === 'explosive_barrel') {
         // Distinctive red explosive powder barrel with dark steel hoops
         const barrelGeo = new THREE.CylinderGeometry(w / 2, w / 2, h, 16);
         const barrelMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45, metalness: 0.3 });
@@ -413,6 +427,7 @@ export function GameScene({
         );
         hoop.rotation.x = Math.PI / 2;
         mesh.add(hoop);
+        shape = new CANNON.Cylinder(w / 2, w / 2, h, 14);
       } else {
         const geo = new THREE.BoxGeometry(w, h, d);
         const mat = new THREE.MeshStandardMaterial({
@@ -423,23 +438,23 @@ export function GameScene({
         mesh = new THREE.Mesh(geo, mat);
         const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: prof.edge }));
         mesh.add(edges);
+        shape = new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2));
       }
 
       mesh.position.set(def.x, def.y, def.z ?? 0);
       if (def.rot) mesh.rotation.z = def.rot;
       scene.add(mesh);
 
-      const shape = def.material === 'explosive_barrel'
-        ? new CANNON.Cylinder(w / 2, w / 2, h, 14)
-        : new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2));
-
       const body = new CANNON.Body({
         mass: prof.mass,
         shape,
         position: new CANNON.Vec3(def.x, def.y, def.z ?? 0),
-        material: new CANNON.Material({ friction: prof.friction, restitution: prof.restitution }),
-        linearDamping: 0.08,
-        angularDamping: 0.16,
+        material: new CANNON.Material({
+          friction: isSphere ? 0.15 : prof.friction,
+          restitution: isSphere ? 0.35 : prof.restitution,
+        }),
+        linearDamping: isSphere ? 0.01 : 0.08,
+        angularDamping: isSphere ? 0.04 : 0.16, // Low angular damping allows smooth rolling down ramps
       });
 
       body.allowSleep = true;
