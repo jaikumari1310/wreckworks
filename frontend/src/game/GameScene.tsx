@@ -87,6 +87,7 @@ export function GameScene({
   const particlesRef = useRef<VisualParticle[]>([]);
   const lastFireTimeRef = useRef(0);
   const dustGeoRef = useRef<THREE.DodecahedronGeometry | null>(null);
+  const levelLoadedAtRef = useRef(Date.now());
   // Game-feel + flow refs
   const recoilRef = useRef(0);
   const muzzleFlashRef = useRef<THREE.Mesh | null>(null);
@@ -295,7 +296,7 @@ export function GameScene({
 
   // World 2 Explosive Barrel detonation mechanic: true rigid-body kinetic shockwave
   const detonateBarrel = (barrel: DynamicBlock) => {
-    if (barrel.destroyed) return;
+    if (barrel.destroyed || shotsUsedRef.current === 0) return;
     barrel.destroyed = true;
     barrel.mesh.visible = false;
 
@@ -385,6 +386,7 @@ export function GameScene({
     lastReportedChainRef.current = 0;
     shakeRef.current = 0;
     recoilRef.current = 0;
+    levelLoadedAtRef.current = Date.now();
     if (muzzleFlashRef.current) muzzleFlashRef.current.visible = false;
     events.onScoreChange(0);
     events.onShotFired(0);
@@ -456,8 +458,14 @@ export function GameScene({
       // Attach collision listener for explosive barrels
       if (isExplosive) {
         body.addEventListener('collide', (ev: any) => {
-          const impact = ev.contact.getImpactVelocityAlongNormal();
-          if (impact > 1.6 && !blockEntry.destroyed) {
+          // Never detonate on initial load settling before player has shot
+          if (shotsUsedRef.current === 0) return;
+          if (Date.now() - levelLoadedAtRef.current < 600) return;
+          if (blockEntry.destroyed) return;
+
+          const isBall = ballsRef.current.some(b => b.body === ev.body);
+          const impact = Math.abs(ev.contact.getImpactVelocityAlongNormal());
+          if (isBall || impact > 2.8) {
             detonateBarrel(blockEntry);
           }
         });
@@ -708,6 +716,17 @@ export function GameScene({
     let destroyed = 0;
     let newlyDestroyed = 0;
     let cx = 0, cy = 0;
+
+    // If no shot has been fired yet, keep syncing baseline resting positions and do not evaluate destruction
+    if (shotsUsedRef.current === 0) {
+      blocksRef.current.forEach(b => {
+        b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);
+        b.mesh.quaternion.set(b.body.quaternion.x, b.body.quaternion.y, b.body.quaternion.z, b.body.quaternion.w);
+        b.initialPos.set(b.body.position.x, b.body.position.y, b.body.position.z);
+      });
+      return;
+    }
+
     blocksRef.current.forEach(b => {
       b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);
       b.mesh.quaternion.set(b.body.quaternion.x, b.body.quaternion.y, b.body.quaternion.z, b.body.quaternion.w);
