@@ -195,7 +195,7 @@ export function GameScene({
     scene.add(mesh);
 
     const shape = new CANNON.Sphere(radius);
-    const body = new CANNON.Body({ mass: 6, shape, position: new CANNON.Vec3(muzzle.x, muzzle.y, 0) });
+    const body = new CANNON.Body({ mass: 3.2, shape, position: new CANNON.Vec3(muzzle.x, muzzle.y, 0) });
     body.velocity.copy(v);
     body.linearDamping = 0.01;
     body.angularDamping = 0.1;
@@ -453,8 +453,8 @@ export function GameScene({
           friction: isSphere ? 0.15 : prof.friction,
           restitution: isSphere ? 0.35 : prof.restitution,
         }),
-        linearDamping: isSphere ? 0.01 : 0.08,
-        angularDamping: isSphere ? 0.04 : 0.16, // Low angular damping allows smooth rolling down ramps
+        linearDamping: isSphere ? 0.01 : (prof.linearDamping ?? 0.08),
+        angularDamping: isSphere ? 0.04 : (prof.angularDamping ?? 0.16),
       });
 
       body.allowSleep = true;
