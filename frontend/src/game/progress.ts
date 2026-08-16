@@ -55,7 +55,7 @@ export async function completeLevel(id: number, stars: number, score: number, sh
   const newP: Progress = {
     ...p,
     levels: { ...p.levels, [id]: next },
-    maxUnlocked: Math.max(p.maxUnlocked, Math.min(10, id + 1)),
+    maxUnlocked: Math.max(p.maxUnlocked, Math.min(20, id + 1)),
   };
   await saveProgress(newP);
   return newP;

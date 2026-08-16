@@ -70,7 +70,7 @@ function stackTower(cx: number, base: number, count: number, mat: BlockMaterial,
 // WORLD 1: CONSTRUCTION SITE (Levels 1 – 10)
 // -------------------------------------------------------------
 const WORLD_1_LEVELS: LevelDef[] = [
-  // L1 - First Impact - one tiny tower of 3 wood blocks
+  // L1 - First Impact
   {
     id: 1,
     worldId: 1,
@@ -80,7 +80,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     blocks: stackTower(3, 0, 3, MAT.wood),
     starThresholds: { one: 5, two: 3, three: 2 },
   },
-  // L2 - The Stack - crates + wood
+  // L2 - The Stack
   {
     id: 2,
     worldId: 1,
@@ -94,7 +94,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 5, two: 3, three: 2 },
   },
-  // L3 - Weak Point - tall pillar with wide top; hit lower to topple
+  // L3 - Weak Point
   {
     id: 3,
     worldId: 1,
@@ -108,7 +108,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
-  // L4 - Mixed Materials - wood pillars supporting a brick beam
+  // L4 - Mixed Materials
   {
     id: 4,
     worldId: 1,
@@ -122,7 +122,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
-  // L5 - Chain Reaction - a row of pieces to topple
+  // L5 - Chain Reaction
   {
     id: 5,
     worldId: 1,
@@ -153,7 +153,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
-  // L7 - Heavy Load - concrete
+  // L7 - Heavy Load
   {
     id: 7,
     worldId: 1,
@@ -167,7 +167,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 5, two: 3, three: 2 },
   },
-  // L8 - Limited Shots - only 3
+  // L8 - Limited Shots
   {
     id: 8,
     worldId: 1,
@@ -182,7 +182,7 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 3, two: 2, three: 1 },
   },
-  // L9 - Precision - protect walls, hit gap
+  // L9 - Precision
   {
     id: 9,
     worldId: 1,
@@ -197,22 +197,19 @@ const WORLD_1_LEVELS: LevelDef[] = [
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
-  // L10 - Master Builder — everything!
+  // L10 - Master Builder
   {
     id: 10,
     worldId: 1,
     name: 'Master Builder',
     shots: 6,
     blocks: [
-      // Base
       { x: 2.5, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
       { x: 4.5, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
       { x: 3.5, y: 1.15, w: 2.4, h: 0.3, material: MAT.wood, isTarget: true },
-      // Middle floor
       { x: 2.8, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
       { x: 4.2, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
       { x: 3.5, y: 2.35, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
-      // Top
       { x: 3.5, y: 2.9, w: 0.9, h: 0.8, material: MAT.crate, isTarget: true },
       { x: 3.0, y: 3.55, w: 0.5, h: 0.5, material: MAT.wood, isTarget: true },
       { x: 4.0, y: 3.55, w: 0.5, h: 0.5, material: MAT.wood, isTarget: true },
@@ -222,22 +219,19 @@ const WORLD_1_LEVELS: LevelDef[] = [
 ];
 
 // -------------------------------------------------------------
-// WORLD 2: PIRATE HARBOR (Levels 11+)
+// WORLD 2: PIRATE HARBOR (Levels 11 – 20)
 // -------------------------------------------------------------
 const WORLD_2_LEVELS: LevelDef[] = [
-  // L11 (World 2 - Level 1): Harbor Test
-  // Introduces the Explosive Barrel mechanic nestled in a wooden dock tower
+  // L1 (Global 11) - Arrival at the Harbor
   {
     id: 11,
     worldId: 2,
-    name: 'Harbor Test',
+    name: 'Arrival at the Harbor',
     hint: 'HIT THE EXPLOSIVE BARREL FOR MAXIMUM BLAST',
     shots: 4,
     blocks: [
-      // Pier Dock Staging Foundations
       { x: 5.0, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
       { x: 7.4, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
-      // Central Explosive Red Barrel (Weak Point)
       {
         x: 6.2,
         y: 0.45,
@@ -249,14 +243,381 @@ const WORLD_2_LEVELS: LevelDef[] = [
         explosionRadius: 3.4,
         explosionForce: 55,
       },
-      // Wooden Deck Platform
       { x: 6.2, y: 1.2, w: 2.9, h: 0.3, material: MAT.wood, isTarget: true },
-      // Upper Cargo Staging & Crates
       { x: 5.6, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
       { x: 6.8, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
       { x: 6.2, y: 2.5, w: 0.8, h: 0.7, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L2 (Global 12) - Barrel Trouble
+  {
+    id: 12,
+    worldId: 2,
+    name: 'Barrel Trouble',
+    hint: 'ONE EXPLOSION CAN TRIGGER ANOTHER',
+    shots: 4,
+    blocks: [
+      { x: 5.4, y: 0.4, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 7.0, y: 0.4, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
+      {
+        x: 6.2,
+        y: 0.45,
+        w: 0.7,
+        h: 0.9,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 1.0, w: 2.6, h: 0.3, material: MAT.wood, isTarget: true },
+      {
+        x: 5.7,
+        y: 1.55,
+        w: 0.7,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 6.7, y: 1.6, w: 0.6, h: 0.9, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.35, w: 1.4, h: 0.6, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.7, h: 0.6, material: MAT.wood, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L3 (Global 13) - The Dock
+  {
+    id: 13,
+    worldId: 2,
+    name: 'The Dock',
+    shots: 4,
+    blocks: [
+      { x: 4.8, y: 0.6, w: 0.45, h: 1.2, material: MAT.wood },
+      { x: 6.2, y: 0.6, w: 0.45, h: 1.2, material: MAT.wood },
+      { x: 7.6, y: 0.6, w: 0.45, h: 1.2, material: MAT.wood },
+      {
+        x: 5.5,
+        y: 0.4,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 1.35, w: 3.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.1, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 7.3, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.4, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L4 (Global 14) - Treasure Tower
+  {
+    id: 14,
+    worldId: 2,
+    name: 'Treasure Tower',
+    shots: 4,
+    blocks: [
+      { x: 5.2, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
+      { x: 7.2, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
+      {
+        x: 6.2,
+        y: 0.45,
+        w: 0.7,
+        h: 0.9,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.5,
+        explosionForce: 58,
+      },
+      { x: 6.2, y: 1.15, w: 2.6, h: 0.3, material: MAT.brick, isTarget: true },
+      { x: 5.5, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
+      { x: 6.9, y: 1.75, w: 0.5, h: 0.9, material: MAT.brick, isTarget: true },
+      { x: 6.2, y: 1.7, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.35, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.8, y: 2.85, w: 0.6, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.6, y: 2.85, w: 0.6, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 3.5, w: 0.7, h: 0.6, material: MAT.wood, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L5 (Global 15) - Powder Keg
+  {
+    id: 15,
+    worldId: 2,
+    name: 'Powder Keg',
+    hint: 'CHAIN REACTION SPECTACLE',
+    shots: 3,
+    blocks: [
+      { x: 4.6, y: 0.6, w: 0.4, h: 1.2, material: MAT.wood },
+      { x: 6.2, y: 0.6, w: 0.4, h: 1.2, material: MAT.wood },
+      { x: 7.8, y: 0.6, w: 0.4, h: 1.2, material: MAT.wood },
+      {
+        x: 5.4,
+        y: 0.45,
+        w: 0.65,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      {
+        x: 7.0,
+        y: 0.45,
+        w: 0.65,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 1.35, w: 3.6, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.0, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 7.4, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      {
+        x: 6.2,
+        y: 1.85,
+        w: 0.65,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 2.45, w: 2.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.7, y: 2.95, w: 0.6, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.7, y: 2.95, w: 0.6, h: 0.7, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 3, two: 2, three: 1 },
+  },
+
+  // L6 (Global 16) - The Bridge
+  {
+    id: 16,
+    worldId: 2,
+    name: 'The Bridge',
+    shots: 4,
+    blocks: [
+      { x: 4.4, y: 0.5, w: 0.7, h: 1.0, material: MAT.brick },
+      { x: 4.4, y: 1.35, w: 0.6, h: 0.7, material: MAT.brick },
+      { x: 8.0, y: 0.5, w: 0.7, h: 1.0, material: MAT.brick },
+      { x: 8.0, y: 1.35, w: 0.6, h: 0.7, material: MAT.brick },
+      { x: 6.2, y: 0.5, w: 0.4, h: 1.0, material: MAT.wood },
+      {
+        x: 6.2,
+        y: 1.25,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.5,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 1.85, w: 4.2, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.2, y: 2.3, w: 0.65, h: 0.6, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.35, w: 0.75, h: 0.7, material: MAT.wood, isTarget: true },
+      { x: 7.2, y: 2.3, w: 0.65, h: 0.6, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L7 (Global 17) - Pirate Ship
+  {
+    id: 17,
+    worldId: 2,
+    name: 'Pirate Ship',
+    shots: 4,
+    blocks: [
+      { x: 4.8, y: 0.4, w: 1.0, h: 0.8, material: MAT.wood },
+      { x: 6.2, y: 0.4, w: 1.2, h: 0.8, material: MAT.wood },
+      { x: 7.6, y: 0.4, w: 1.0, h: 0.8, material: MAT.wood },
+      {
+        x: 5.5,
+        y: 0.95,
+        w: 0.7,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.5,
+        explosionForce: 55,
+      },
+      { x: 6.9, y: 0.95, w: 0.7, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 1.45, w: 4.0, h: 0.35, material: MAT.wood, isTarget: true },
+      { x: 4.6, y: 1.95, w: 0.7, h: 0.65, material: MAT.wood, isTarget: true },
+      { x: 7.8, y: 1.95, w: 0.7, h: 0.65, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.05, w: 0.45, h: 0.9, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 3.55, w: 1.4, h: 0.25, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 3.95, w: 0.55, h: 0.55, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L8 (Global 18) - Harbor Under Fire
+  {
+    id: 18,
+    worldId: 2,
+    name: 'Harbor Under Fire',
+    hint: 'ONLY 3 SHOTS — MAKE EVERY HIT COUNT',
+    shots: 3,
+    blocks: [
+      // Left Tower
+      { x: 4.8, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
+      {
+        x: 4.8,
+        y: 1.25,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 4.8, y: 1.8, w: 1.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 4.8, y: 2.35, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      // Connecting Gantry
+      { x: 6.2, y: 1.8, w: 1.4, h: 0.25, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.3, w: 0.6, h: 0.6, material: MAT.crate, isTarget: true },
+      // Right Tower
+      { x: 7.6, y: 0.5, w: 0.6, h: 1.0, material: MAT.concrete },
+      {
+        x: 7.6,
+        y: 1.25,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 7.6, y: 1.8, w: 1.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 7.6, y: 2.35, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 3, two: 2, three: 1 },
+  },
+
+  // L9 (Global 19) - Captain's Fort
+  {
+    id: 19,
+    worldId: 2,
+    name: "Captain's Fort",
+    shots: 4,
+    blocks: [
+      { x: 4.6, y: 0.75, w: 0.5, h: 1.5, material: MAT.metal },
+      { x: 7.8, y: 0.75, w: 0.5, h: 1.5, material: MAT.concrete },
+      { x: 6.2, y: 0.3, w: 2.0, h: 0.6, material: MAT.brick },
+      {
+        x: 6.2,
+        y: 0.85,
+        w: 0.7,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.6,
+        explosionForce: 60,
+      },
+      { x: 6.2, y: 1.65, w: 3.6, h: 0.35, material: MAT.brick, isTarget: true },
+      { x: 5.3, y: 2.25, w: 0.5, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 7.1, y: 2.25, w: 0.5, h: 0.8, material: MAT.wood, isTarget: true },
+      {
+        x: 6.2,
+        y: 2.25,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.5,
+        explosionForce: 55,
+      },
+      { x: 6.2, y: 2.85, w: 2.4, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 3.4, w: 0.8, h: 0.7, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // L10 (Global 20) - Sink the Harbor
+  {
+    id: 20,
+    worldId: 2,
+    name: 'Sink the Harbor',
+    hint: 'TOTAL HARBOR DESTRUCTION',
+    shots: 5,
+    blocks: [
+      // Galleon Base (Left)
+      { x: 4.4, y: 0.45, w: 0.9, h: 0.9, material: MAT.wood },
+      { x: 5.6, y: 0.45, w: 0.9, h: 0.9, material: MAT.wood },
+      {
+        x: 5.0,
+        y: 1.05,
+        w: 0.7,
+        h: 0.85,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.5,
+        explosionForce: 58,
+      },
+      { x: 5.0, y: 1.6, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.0, y: 2.25, w: 0.4, h: 1.0, material: MAT.wood, isTarget: true },
+      { x: 5.0, y: 2.9, w: 0.8, h: 0.6, material: MAT.crate, isTarget: true },
+      // Dock Bridge
+      { x: 6.3, y: 1.6, w: 1.4, h: 0.25, material: MAT.wood, isTarget: true },
+      // Harbor Tower Base (Right)
+      { x: 7.2, y: 0.5, w: 0.55, h: 1.0, material: MAT.brick },
+      { x: 8.4, y: 0.5, w: 0.55, h: 1.0, material: MAT.concrete },
+      {
+        x: 7.8,
+        y: 0.45,
+        w: 0.7,
+        h: 0.9,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.6,
+        explosionForce: 60,
+      },
+      { x: 7.8, y: 1.15, w: 2.0, h: 0.3, material: MAT.brick, isTarget: true },
+      {
+        x: 7.8,
+        y: 1.7,
+        w: 0.65,
+        h: 0.8,
+        material: MAT.explosive_barrel,
+        isTarget: true,
+        isExplosive: true,
+        explosionRadius: 3.4,
+        explosionForce: 55,
+      },
+      { x: 7.8, y: 2.3, w: 1.8, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 7.4, y: 2.85, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 8.2, y: 2.85, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 7.8, y: 3.5, w: 0.8, h: 0.6, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 5, two: 3, three: 1 },
   },
 ];
 

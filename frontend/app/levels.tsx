@@ -82,8 +82,10 @@ export default function LevelSelect() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.grid}>
         {currentWorld.levels.map((lv, index) => {
           const rec = progress ? getLevelRecord(progress, lv.id) : { stars: 0, bestScore: 0, bestShots: 0 };
-          // In dev/test mode, World 2 Level 11 is playable; otherwise follows maxUnlocked
-          const locked = lv.worldId === 1 ? lv.id > maxUnlocked : (lv.id > maxUnlocked && maxUnlocked < 10);
+          // Sequential unlocking: W1 (1..10), W2 (11..20). Level 11 accessible for testing.
+          const locked = lv.worldId === 1
+            ? lv.id > maxUnlocked
+            : (lv.id > maxUnlocked && lv.id !== 11);
           const completed = rec.stars > 0;
           return (
             <Pressable
