@@ -69,7 +69,7 @@ function stackTower(cx: number, base: number, count: number, mat: BlockMaterial,
 }
 
 // -------------------------------------------------------------
-// WORLD 1: CONSTRUCTION SITE (Levels 1 – 10)
+// WORLD 1: CONSTRUCTION SITE (Levels 1 – 10) [PRESERVED BASELINE]
 // -------------------------------------------------------------
 const WORLD_1_LEVELS: LevelDef[] = [
   // L1 - First Impact
@@ -221,15 +221,17 @@ const WORLD_1_LEVELS: LevelDef[] = [
 ];
 
 // -------------------------------------------------------------
-// WORLD 2: PIRATE HARBOR (Levels 11 – 20) — HEAVY ROLLING HAZARDS
+// WORLD 2: PIRATE HARBOR (Levels 11 – 20) — EXPERIENCED GAMER CAMPAIGN
 // -------------------------------------------------------------
 const WORLD_2_LEVELS: LevelDef[] = [
-  // L1 (Global 11) - The Rolling Keg
+  // -----------------------------------------------------------
+  // L1 (Global 11) - The Rolling Keg (Introductory kinetic puzzle)
+  // -----------------------------------------------------------
   {
     id: 11,
     worldId: 2,
     name: 'The Rolling Keg',
-    hint: 'SHOOT THE RAMP SUPPORT TO RELEASE THE HEAVY BALL',
+    hint: 'SHOOT THE SUPPORT TO DROP THE HEAVY BALL ONTO THE RAMP',
     shots: 3,
     blocks: [
       { x: 4.7, y: 0.7, w: 0.4, h: 1.4, material: MAT.wood },
@@ -244,204 +246,261 @@ const WORLD_2_LEVELS: LevelDef[] = [
     starThresholds: { one: 3, two: 2, three: 1 },
   },
 
-  // L2 (Global 12) - The Ramp & Pillar
+  // -----------------------------------------------------------
+  // L2 (Global 12) - The Keyhole Slit (Precision Aiming Hurdle)
+  // Armor plates protect the tower; hit the wooden pin through the narrow slit!
+  // -----------------------------------------------------------
   {
     id: 12,
     worldId: 2,
-    name: 'The Ramp & Pillar',
-    shots: 3,
+    name: 'The Keyhole Slit',
+    hint: 'AIM PRECISELY THROUGH THE SLIT BETWEEN THE ARMOR PLATES',
+    shots: 4,
     blocks: [
-      { x: 4.5, y: 0.9, w: 0.5, h: 1.8, material: MAT.concrete },
-      { x: 4.5, y: 1.9, w: 0.8, h: 0.25, material: MAT.wood }, // Flat resting shelf
-      { x: 4.5, y: 2.35, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 5.6, y: 1.35, w: 2.0, h: 0.22, material: MAT.wood, rot: -0.3 }, // Down-ramp
-      // Target tower
-      { x: 6.8, y: 0.55, w: 0.4, h: 1.1, material: MAT.wood, isTarget: true },
-      { x: 7.8, y: 0.75, w: 0.4, h: 1.5, material: MAT.brick },
-      { x: 7.3, y: 1.35, w: 1.8, h: 0.25, material: MAT.wood, isTarget: true },
+      // Front Armor Shield with narrow keyhole window at y=1.2
+      { x: 4.8, y: 0.45, w: 0.4, h: 0.9, material: MAT.metal },
+      { x: 4.8, y: 1.95, w: 0.4, h: 0.9, material: MAT.metal },
+      // Critical weak point pin inside the slit
+      { x: 5.6, y: 1.2, w: 0.35, h: 0.4, material: MAT.wood },
+      // Rear Fortified Watchtower
+      { x: 6.8, y: 0.6, w: 0.5, h: 1.2, material: MAT.brick, isTarget: true },
+      { x: 7.8, y: 0.6, w: 0.5, h: 1.2, material: MAT.brick, isTarget: true },
+      { x: 7.3, y: 1.35, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
       { x: 7.0, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
       { x: 7.6, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 7.3, y: 2.5, w: 0.8, h: 0.6, material: MAT.wood, isTarget: true },
     ],
-    starThresholds: { one: 3, two: 2, three: 1 },
+    starThresholds: { one: 4, two: 2, three: 1 },
   },
 
-  // L3 (Global 13) - Double Ramp Cascade
+  // -----------------------------------------------------------
+  // L3 (Global 13) - The High Mortar (Steep Parabolic Arc Hurdle)
+  // 2.2m tall concrete sea wall blocks straight shots; use a 70° lob over the wall!
+  // -----------------------------------------------------------
   {
     id: 13,
     worldId: 2,
-    name: 'Double Cascade',
+    name: 'The High Mortar',
+    hint: 'USE A HIGH-ANGLE LOB (65°-72°) OVER THE CONCRETE SEA WALL',
+    shots: 4,
+    blocks: [
+      // Tall Concrete Sea Wall (Blocks direct line of sight)
+      { x: 4.8, y: 1.1, w: 0.55, h: 2.2, material: MAT.concrete },
+      // Sunken Vault Targets behind the sea wall
+      { x: 6.5, y: 0.4, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 7.5, y: 0.4, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 7.0, y: 0.95, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 7.0, y: 1.5, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 7.0, y: 2.15, w: 0.7, h: 0.5, material: MAT.wood, isTarget: true },
+    ],
+    starThresholds: { one: 4, two: 2, three: 1 },
+  },
+
+  // -----------------------------------------------------------
+  // L4 (Global 14) - The Keystone Arch (Structural Keystone Hurdle)
+  // Interlocking stone arch; hitting the central wooden keystone collapses the arch!
+  // -----------------------------------------------------------
+  {
+    id: 14,
+    worldId: 2,
+    name: 'The Keystone Arch',
+    hint: 'KNOCK OUT THE WOODEN KEYSTONE AT THE APEX OF THE ARCH',
     shots: 3,
     blocks: [
-      { x: 4.8, y: 1.2, w: 0.4, h: 2.4, material: MAT.wood },
-      { x: 4.8, y: 2.5, w: 0.8, h: 0.25, material: MAT.wood }, // Flat resting shelf
-      { x: 4.8, y: 2.95, w: 0.7, h: 0.7, material: MAT.heavy_ball, isSphere: true },
-      { x: 5.8, y: 2.0, w: 1.8, h: 0.22, material: MAT.wood, rot: -0.25 }, // High ramp
-      { x: 6.6, y: 1.15, w: 1.8, h: 0.22, material: MAT.wood, rot: -0.25 }, // Mid ramp
-      // Target warehouse
-      { x: 7.6, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 8.6, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 8.1, y: 1.05, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
-      { x: 8.1, y: 1.55, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 8.1, y: 2.2, w: 0.6, h: 0.6, material: MAT.crate, isTarget: true },
+      // Left Arch Abutment
+      { x: 4.8, y: 0.5, w: 0.5, h: 1.0, material: MAT.brick },
+      { x: 5.3, y: 1.1, w: 0.5, h: 0.6, material: MAT.brick },
+      // Right Arch Abutment
+      { x: 7.8, y: 0.5, w: 0.5, h: 1.0, material: MAT.brick },
+      { x: 7.3, y: 1.1, w: 0.5, h: 0.6, material: MAT.brick },
+      // CENTRAL WOODEN KEYSTONE (Crucial structural tension block)
+      { x: 6.3, y: 1.25, w: 0.5, h: 0.4, material: MAT.wood, isTarget: true },
+      // Roadway & Cargo atop Arch
+      { x: 6.3, y: 1.6, w: 3.6, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.6, y: 2.1, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.3, y: 2.15, w: 0.7, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 7.0, y: 2.1, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 6.3, y: 2.8, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 3, two: 2, three: 1 },
   },
 
-  // L4 (Global 14) - Cantilever Teeter
+  // -----------------------------------------------------------
+  // L5 (Global 15) - The Seesaw Catapult (Lever Dynamics Hurdle)
+  // Balanced teeter beam: drop the heavy iron ball on the left to launch the right crates!
+  // -----------------------------------------------------------
   {
-    id: 14,
+    id: 15,
     worldId: 2,
-    name: 'Cantilever Teeter',
-    hint: 'BREAK THE SAFETY PROP TO TIP THE SEESAW',
-    shots: 4,
+    name: 'The Seesaw Catapult',
+    hint: 'BREAK THE LEFT SUPPORT PIN TO CATAPULT THE CARGO STACK',
+    shots: 3,
     blocks: [
+      // Central Fulcrum Pivot
       { x: 6.2, y: 0.5, w: 0.5, h: 1.0, material: MAT.concrete },
-      { x: 4.8, y: 0.5, w: 0.35, h: 1.0, material: MAT.wood }, // Safety prop
+      // Left Safety Prop (Shoot this to trigger the teeter)
+      { x: 4.8, y: 0.5, w: 0.35, h: 1.0, material: MAT.wood },
+      // Seesaw Long Beam
       { x: 6.2, y: 1.15, w: 3.8, h: 0.3, material: MAT.wood, isTarget: true },
+      // Heavy 8.5kg Iron Ball on Left
       { x: 4.8, y: 1.7, w: 0.8, h: 0.8, material: MAT.heavy_ball, isSphere: true },
-      // Counterweight stack
+      // Right Target Payload (Catapulted upward when ball slams left side)
       { x: 7.4, y: 1.7, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
       { x: 7.4, y: 2.45, w: 0.75, h: 0.7, material: MAT.crate, isTarget: true },
       { x: 7.4, y: 3.1, w: 0.6, h: 0.6, material: MAT.wood, isTarget: true },
     ],
-    starThresholds: { one: 4, two: 2, three: 1 },
+    starThresholds: { one: 3, two: 2, three: 1 },
   },
 
-  // L5 (Global 15) - Twin Fortresses
-  {
-    id: 15,
-    worldId: 2,
-    name: 'Twin Fortresses',
-    shots: 4,
-    blocks: [
-      // Left Fort
-      { x: 4.6, y: 0.6, w: 0.45, h: 1.2, material: MAT.brick },
-      { x: 5.6, y: 0.6, w: 0.45, h: 1.2, material: MAT.brick },
-      { x: 5.1, y: 1.35, w: 1.6, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 5.0, y: 1.9, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      // Sky Bridge
-      { x: 6.4, y: 1.35, w: 1.4, h: 0.2, material: MAT.wood, isTarget: true },
-      // Right Fort
-      { x: 7.2, y: 0.6, w: 0.45, h: 1.2, material: MAT.concrete },
-      { x: 8.2, y: 0.6, w: 0.45, h: 1.2, material: MAT.concrete },
-      { x: 7.7, y: 1.35, w: 1.6, h: 0.3, material: MAT.brick, isTarget: true },
-      { x: 7.7, y: 1.85, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 7.7, y: 2.5, w: 0.7, h: 0.6, material: MAT.wood, isTarget: true },
-    ],
-    starThresholds: { one: 4, two: 2, three: 1 },
-  },
-
-  // L6 (Global 16) - The Drawbridge
+  // -----------------------------------------------------------
+  // L6 (Global 16) - The Self-Bunkering Trap (Sequence Hurdle)
+  // Shooting bottom first traps crates under concrete! Topple upper counterweight first!
+  // -----------------------------------------------------------
   {
     id: 16,
     worldId: 2,
-    name: 'The Drawbridge',
+    name: 'The Bunker Trap',
+    hint: 'SEQUENCE PUZZLE: TOPPLE THE TOP ROOF FIRST OR CRATES GET TRAPPED',
     shots: 4,
     blocks: [
-      { x: 4.6, y: 0.75, w: 0.6, h: 1.5, material: MAT.brick },
-      { x: 8.0, y: 0.75, w: 0.6, h: 1.5, material: MAT.brick },
-      { x: 6.3, y: 0.55, w: 0.35, h: 1.1, material: MAT.wood },
-      { x: 6.3, y: 1.65, w: 4.2, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 5.5, y: 2.2, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 6.3, y: 2.15, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 7.1, y: 2.2, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 6.3, y: 2.8, w: 0.65, h: 0.6, material: MAT.wood, isTarget: true },
+      // Lower Chamber Posts
+      { x: 5.2, y: 0.55, w: 0.45, h: 1.1, material: MAT.wood },
+      { x: 7.2, y: 0.55, w: 0.45, h: 1.1, material: MAT.wood },
+      // Protected Interior Crate Vault
+      { x: 6.2, y: 0.4, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      // Heavy Concrete Slab Roof (Will crush and bunker crates if dropped straight)
+      { x: 6.2, y: 1.25, w: 2.8, h: 0.35, material: MAT.concrete },
+      // Upper Counterweight Tower
+      { x: 5.7, y: 1.85, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 6.7, y: 1.85, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.4, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.7, h: 0.8, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
 
-  // L7 (Global 17) - Galleon Rigging
+  // -----------------------------------------------------------
+  // L7 (Global 17) - Domino Crossing (Spatial Gap Hurdle)
+  // Left pier must topple to the right, acting as a falling bridge to crush right fort!
+  // -----------------------------------------------------------
   {
     id: 17,
     worldId: 2,
-    name: 'Galleon Rigging',
-    shots: 4,
-    blocks: [
-      { x: 6.2, y: 0.4, w: 3.2, h: 0.8, material: MAT.wood },
-      { x: 4.8, y: 1.0, w: 0.5, h: 0.8, material: MAT.wood },
-      { x: 7.6, y: 1.0, w: 0.5, h: 0.8, material: MAT.wood },
-      { x: 6.2, y: 1.55, w: 3.8, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 5.2, y: 2.05, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 7.2, y: 2.05, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 6.2, y: 2.2, w: 0.4, h: 1.0, material: MAT.wood },
-      { x: 6.2, y: 2.85, w: 2.0, h: 0.25, material: MAT.wood, isTarget: true },
-      { x: 6.2, y: 3.4, w: 0.8, h: 0.8, material: MAT.heavy_ball, isSphere: true },
-      { x: 6.2, y: 4.05, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
-    ],
-    starThresholds: { one: 4, two: 2, three: 1 },
-  },
-
-  // L8 (Global 18) - Harbor Gauntlet
-  {
-    id: 18,
-    worldId: 2,
-    name: 'Harbor Gauntlet',
-    hint: '3 SHOTS — USE HIGH-ARC TRAJECTORY',
+    name: 'Domino Crossing',
+    hint: 'TOPPLE THE LEFT TOWER TOWARDS THE RIGHT TO BRIDGE THE WATER GAP',
     shots: 3,
     blocks: [
-      { x: 4.8, y: 0.9, w: 0.45, h: 1.8, material: MAT.metal },
-      { x: 8.0, y: 0.9, w: 0.5, h: 1.8, material: MAT.concrete },
-      { x: 6.4, y: 2.0, w: 2.6, h: 0.25, material: MAT.wood, rot: -0.22 },
-      { x: 5.6, y: 2.55, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      // Internal Vault
-      { x: 6.4, y: 0.45, w: 0.7, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 7.2, y: 0.45, w: 0.7, h: 0.9, material: MAT.crate, isTarget: true },
-      { x: 6.8, y: 1.15, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
-      { x: 6.8, y: 1.7, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      // Left Leaning Domino Tower (Designed to fall rightward)
+      { x: 4.6, y: 0.6, w: 0.45, h: 1.2, material: MAT.wood },
+      { x: 5.2, y: 0.35, w: 0.4, h: 0.7, material: MAT.wood }, // Shorter front leg induces rightward torque
+      { x: 4.9, y: 1.35, w: 1.6, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 4.9, y: 2.05, w: 0.45, h: 1.1, material: MAT.brick, isTarget: true },
+      { x: 4.9, y: 2.8, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      // Open Water Gap (x=5.6 to x=6.8)
+      // Right Fortified Pier
+      { x: 7.2, y: 0.6, w: 0.5, h: 1.2, material: MAT.brick },
+      { x: 8.2, y: 0.6, w: 0.5, h: 1.2, material: MAT.concrete },
+      { x: 7.7, y: 1.35, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
+      { x: 7.7, y: 1.9, w: 0.7, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 7.7, y: 2.55, w: 0.7, h: 0.5, material: MAT.wood, isTarget: true },
     ],
     starThresholds: { one: 3, two: 2, three: 1 },
   },
 
-  // L9 (Global 19) - Admiral's Bastion
+  // -----------------------------------------------------------
+  // L8 (Global 18) - Sinking Galleon (Capsize Physics Hurdle)
+  // Top-heavy ship: breaking the left keel strut capsizes the entire vessel!
+  // -----------------------------------------------------------
+  {
+    id: 18,
+    worldId: 2,
+    name: 'Sinking Galleon',
+    hint: 'REMOVE THE LEFT HULL STRUT TO CAPSIZE THE ENTIRE SHIP',
+    shots: 3,
+    blocks: [
+      // Keel & Struts
+      { x: 4.8, y: 0.4, w: 0.45, h: 0.8, material: MAT.wood }, // Weak left strut
+      { x: 6.2, y: 0.4, w: 1.2, h: 0.8, material: MAT.wood },  // Central keel
+      { x: 7.6, y: 0.4, w: 0.5, h: 0.8, material: MAT.wood },  // Right hull
+      // Gun Deck
+      { x: 6.2, y: 1.0, w: 3.8, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 5.2, y: 1.5, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 7.2, y: 1.5, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      // Top-Heavy Mast & Yardarm Rigging
+      { x: 6.2, y: 1.7, w: 0.4, h: 1.1, material: MAT.wood },
+      { x: 6.2, y: 2.4, w: 2.2, h: 0.25, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 2.95, w: 0.8, h: 0.8, material: MAT.heavy_ball, isSphere: true }, // Anchor Ball Ballast
+      { x: 6.2, y: 3.6, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
+    ],
+    starThresholds: { one: 3, two: 2, three: 1 },
+  },
+
+  // -----------------------------------------------------------
+  // L9 (Global 19) - Admiral's Bastion (The Triple Threat Challenge)
+  // Multi-tier citadel with armor plate, high mortar gap, and 2 rolling spheres.
+  // -----------------------------------------------------------
   {
     id: 19,
     worldId: 2,
     name: "Admiral's Bastion",
+    hint: '3-TIER CITADEL: COMBINE HIGH-ARC SHOTS WITH ROLLING HAZARDS',
     shots: 4,
     blocks: [
-      { x: 4.8, y: 0.55, w: 0.5, h: 1.1, material: MAT.brick },
-      { x: 6.2, y: 0.55, w: 0.5, h: 1.1, material: MAT.concrete },
+      // Heavy Sea Defense Wall (Left)
+      { x: 4.6, y: 0.8, w: 0.5, h: 1.6, material: MAT.metal },
+      // Foundation Columns
+      { x: 6.0, y: 0.55, w: 0.5, h: 1.1, material: MAT.concrete },
       { x: 7.6, y: 0.55, w: 0.5, h: 1.1, material: MAT.brick },
-      { x: 6.2, y: 1.25, w: 3.6, h: 0.35, material: MAT.brick, isTarget: true },
-      { x: 5.2, y: 1.8, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 7.2, y: 1.8, w: 0.7, h: 0.75, material: MAT.crate, isTarget: true },
-      { x: 5.8, y: 2.1, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 6.8, y: 2.1, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 6.3, y: 2.7, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 6.3, y: 3.25, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 6.3, y: 3.85, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
+      // Vault Target
+      { x: 6.8, y: 0.4, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      // Tier 1 Reinforced Deck
+      { x: 6.8, y: 1.25, w: 2.8, h: 0.35, material: MAT.brick, isTarget: true },
+      { x: 5.6, y: 1.8, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      // Tier 2 Pillars & Cargo
+      { x: 6.4, y: 1.95, w: 0.4, h: 1.0, material: MAT.wood, isTarget: true },
+      { x: 7.4, y: 1.95, w: 0.4, h: 1.0, material: MAT.wood, isTarget: true },
+      { x: 6.9, y: 2.6, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 6.9, y: 3.15, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      { x: 6.9, y: 3.75, w: 0.6, h: 0.5, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
 
-  // L10 (Global 20) - Sink the Harbor
+  // -----------------------------------------------------------
+  // L10 (Global 20) - Sink the Harbor (The Grand Master Finale)
+  // Galleon (left) + Seesaw Bridge (mid) + 4-tier Lighthouse Fort (right)!
+  // 1-Shot Golden Keystroke triggers a catastrophic whole-harbor chain reaction!
+  // -----------------------------------------------------------
   {
     id: 20,
     worldId: 2,
     name: 'Sink the Harbor',
-    hint: 'TOTAL HARBOR DESTRUCTION',
+    hint: 'GRAND FINALE: HIT THE GALLEON RIGGING TO TRIGGER TOTAL HARBOR COLLAPSE',
     shots: 5,
     blocks: [
-      // Galleon Base (Left)
-      { x: 4.2, y: 0.45, w: 1.0, h: 0.9, material: MAT.wood },
-      { x: 5.4, y: 0.45, w: 1.0, h: 0.9, material: MAT.wood },
-      { x: 4.8, y: 1.1, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 4.8, y: 1.7, w: 0.35, h: 0.9, material: MAT.wood },
-      { x: 4.8, y: 2.3, w: 1.8, h: 0.25, material: MAT.wood, rot: -0.2 },
-      { x: 4.4, y: 2.8, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 5.3, y: 1.6, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
-      // Dock Bridge
-      { x: 6.3, y: 1.1, w: 1.6, h: 0.25, material: MAT.wood, isTarget: true },
-      { x: 6.3, y: 1.6, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
-      // Watchtower (Right)
-      { x: 7.2, y: 0.55, w: 0.5, h: 1.1, material: MAT.brick },
-      { x: 8.4, y: 0.55, w: 0.5, h: 1.1, material: MAT.concrete },
-      { x: 7.8, y: 1.25, w: 2.0, h: 0.3, material: MAT.brick, isTarget: true },
-      { x: 7.4, y: 1.8, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
-      { x: 8.2, y: 1.8, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
-      { x: 7.8, y: 2.35, w: 1.8, h: 0.3, material: MAT.wood, isTarget: true },
-      { x: 7.8, y: 2.9, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
-      { x: 7.8, y: 3.5, w: 0.7, h: 0.6, material: MAT.crate, isTarget: true },
+      // --- SECTION 1: PIRATE GALLEON (Left) ---
+      { x: 4.2, y: 0.45, w: 0.9, h: 0.9, material: MAT.wood },
+      { x: 5.2, y: 0.45, w: 0.9, h: 0.9, material: MAT.wood },
+      { x: 4.7, y: 1.05, w: 2.2, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 4.7, y: 1.7, w: 0.35, h: 1.0, material: MAT.wood },
+      { x: 4.7, y: 2.3, w: 1.8, h: 0.25, material: MAT.wood, isTarget: true },
+      { x: 4.7, y: 2.85, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      { x: 5.2, y: 1.55, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
+
+      // --- SECTION 2: DOCK SEESAW BRIDGE (Center) ---
+      { x: 6.3, y: 0.5, w: 0.45, h: 1.0, material: MAT.concrete }, // Fulcrum
+      { x: 6.3, y: 1.15, w: 1.8, h: 0.25, material: MAT.wood, isTarget: true }, // Bridge
+      { x: 6.3, y: 1.65, w: 0.65, h: 0.7, material: MAT.crate, isTarget: true },
+
+      // --- SECTION 3: 4-TIER LIGHTHOUSE FORTRESS (Right) ---
+      { x: 7.4, y: 0.55, w: 0.5, h: 1.1, material: MAT.brick },
+      { x: 8.6, y: 0.55, w: 0.5, h: 1.1, material: MAT.concrete },
+      { x: 8.0, y: 1.25, w: 2.2, h: 0.3, material: MAT.brick, isTarget: true },
+      { x: 7.6, y: 1.8, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 8.4, y: 1.8, w: 0.4, h: 0.8, material: MAT.wood, isTarget: true },
+      { x: 8.0, y: 2.35, w: 2.0, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 8.0, y: 2.9, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      { x: 8.0, y: 3.55, w: 0.7, h: 0.6, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 5, two: 3, three: 1 },
   },
@@ -471,7 +530,7 @@ export const WORLDS: WorldDef[] = [
     name: 'Pirate Harbor',
     subtitle: 'World 2',
     themeKey: 'pirate',
-    badgeLabel: 'ROLLING HAZARDS',
+    badgeLabel: 'PHYSICS CONTRAPTIONS',
     backgroundAsset: require('../../assets/images/pirate_harbor_bg.jpg'),
     ambientColor: 0xf0f9ff,
     ambientIntensity: 0.82,
