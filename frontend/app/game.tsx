@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { theme } from '@/src/game/theme';
@@ -18,6 +19,7 @@ type Result = ResultData;
 export default function GameScreen() {
   const params = useLocalSearchParams<{ levelId?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const initialId = Math.max(1, Math.min(LEVELS.length, parseInt((params.levelId as string) || '1', 10)));
   const [levelId, setLevelId] = useState<number>(initialId);
   const level = useMemo(() => LEVELS.find(l => l.id === levelId) || LEVELS[0], [levelId]);
@@ -107,7 +109,14 @@ export default function GameScreen() {
       <GameScene key={levelKey} level={level} events={events} paused={paused || !!result} />
 
       {/* HUD */}
-      <View style={styles.hudTop} pointerEvents="box-none">
+      <View
+        style={[styles.hudTop, {
+          top: Math.max(12, insets.top + 6),
+          left: Math.max(12, insets.left + 8),
+          right: Math.max(12, insets.right + 8),
+        }]}
+        pointerEvents="box-none"
+      >
         <View style={styles.hudLeft}>
           <Pressable
             testID="pause-button"
