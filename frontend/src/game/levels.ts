@@ -564,21 +564,19 @@ export const MATERIAL_PROFILE: Record<BlockMaterial, {
   hp: number; // hits to break (visual only)
   restitution: number;
   friction: number;
-  linearDamping?: number;
-  angularDamping?: number;
   isSphere?: boolean;
   isExplosive?: boolean;
   explosionRadius?: number;
   explosionForce?: number;
 }> = {
-  crate:            { mass: 0.8, color: '#D5A15A', edge: '#7A4B1F', hp: 1, restitution: 0.25, friction: 0.55, linearDamping: 0.05, angularDamping: 0.1 },
-  wood:             { mass: 2.2, color: '#C88A4A', edge: '#7A4B1F', hp: 2, restitution: 0.15, friction: 0.65, linearDamping: 0.08, angularDamping: 0.16 },
-  brick:            { mass: 9.0, color: '#B84A2A', edge: '#5A1F10', hp: 3, restitution: 0.05, friction: 0.85, linearDamping: 0.15, angularDamping: 0.25 },
-  concrete:         { mass: 28.0, color: '#9CA3AF', edge: '#374151', hp: 4, restitution: 0.02, friction: 0.95, linearDamping: 0.28, angularDamping: 0.35 },
-  metal:            { mass: 45.0, color: '#6B7280', edge: '#1F2937', hp: 6, restitution: 0.1,  friction: 0.95, linearDamping: 0.35, angularDamping: 0.45 },
-  heavy_ball:       { mass: 12.0, color: '#1e293b', edge: '#0f172a', hp: 10, restitution: 0.35, friction: 0.15, linearDamping: 0.01, angularDamping: 0.04, isSphere: true },
+  wood:             { mass: 1.2, color: '#C88A4A', edge: '#7A4B1F', hp: 2, restitution: 0.15, friction: 0.6 },
+  brick:            { mass: 3.0, color: '#B84A2A', edge: '#5A1F10', hp: 3, restitution: 0.05, friction: 0.7 },
+  concrete:         { mass: 5.0, color: '#9CA3AF', edge: '#374151', hp: 4, restitution: 0.02, friction: 0.8 },
+  metal:            { mass: 6.0, color: '#6B7280', edge: '#1F2937', hp: 6, restitution: 0.1,  friction: 0.5 },
+  crate:            { mass: 0.6, color: '#D5A15A', edge: '#7A4B1F', hp: 1, restitution: 0.25, friction: 0.55 },
+  heavy_ball:       { mass: 8.5, color: '#1e293b', edge: '#0f172a', hp: 10, restitution: 0.35, friction: 0.18, isSphere: true },
   explosive_barrel: {
-    mass: 1.5,
+    mass: 1.0,
     color: '#DC2626',
     edge: '#7F1D1D',
     hp: 1,
