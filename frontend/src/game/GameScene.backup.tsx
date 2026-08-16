@@ -1,14 +1,10 @@
-// WreckWorks — 3D physics gameplay engine.
-// Uses expo-gl + three.js for rendering, cannon-es for physics.
-// Side-view style: physics evolves mostly in the XY plane; Z is thin
-// so collisions still feel volumetric.
-
+// Backup of original GameScene.tsx before industrial background overhaul
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { View, StyleSheet, PanResponder, LayoutChangeEvent, Text, Platform, ImageBackground } from 'react-native';
+import { View, StyleSheet, PanResponder, LayoutChangeEvent, Text, Platform } from 'react-native';
 import { LevelDef, BlockDef, MATERIAL_PROFILE, BlockMaterial } from './levels';
 import { theme } from './theme';
 import { sfx } from './sfx';
@@ -312,79 +308,103 @@ export function GameScene({
 
     const renderer = new Renderer({ gl });
     renderer.setSize(width, height);
-    // Transparent WebGL canvas so the rich industrial background image shows through smoothly
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x7ec8f0, 1);
     rendererRef.current = renderer;
 
     // Scene + Camera
     const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x7ec8f0, 12, 28);
     sceneRef.current = scene;
 
-    // Camera adjusted so y=0 (ground) projects firmly onto the road in the lower third of the screen
-    const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
-    camera.position.set(3.2, 2.3, 9.2);
-    camera.lookAt(3.2, 2.3, 0);
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 100);
+    camera.position.set(3.2, 3.4, 10.5);
+    camera.lookAt(3.2, 1.5, 0);
     cameraRef.current = camera;
 
-    // Warm daylight + soft ambient lighting matching the industrial artwork
-    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xfff4db, 1.3);
-    dir.position.set(5, 9, 6.5);
+    const dir = new THREE.DirectionalLight(0xfff2c8, 1.05);
+    dir.position.set(4, 8, 6);
     scene.add(dir);
-    const dir2 = new THREE.DirectionalLight(0x8bc0ec, 0.35);
-    dir2.position.set(-5, 4, -3);
+    const dir2 = new THREE.DirectionalLight(0x9ec8ff, 0.4);
+    dir2.position.set(-4, 4, -4);
     scene.add(dir2);
 
-    // Ground details: 3D pebbles & concrete rubble bits sitting on the terrain
-    const pebbleMat = new THREE.MeshStandardMaterial({ color: 0x765f49, roughness: 0.95 });
-    const rubbleMat = new THREE.MeshStandardMaterial({ color: 0x8e9299, roughness: 0.88 });
-    for (let i = 0; i < 22; i++) {
-      const isRubble = i % 3 === 0;
-      const sz = isRubble ? (0.05 + Math.random() * 0.06) : (0.025 + Math.random() * 0.03);
-      const geo = new THREE.DodecahedronGeometry(sz, 0);
-      const pMesh = new THREE.Mesh(geo, isRubble ? rubbleMat : pebbleMat);
-      const px = -2.5 + Math.random() * 10.5;
-      const pz = -0.6 + Math.random() * 2.8;
-      pMesh.position.set(px, sz * 0.5, pz);
-      pMesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-      scene.add(pMesh);
+    // Skydome (simple gradient plane far behind)
+    const skyGeo = new THREE.PlaneGeometry(50, 20);
+    const skyMat = new THREE.MeshBasicMaterial({ color: 0xa8dcff });
+    const sky = new THREE.Mesh(skyGeo, skyMat);
+    sky.position.set(3, 5, -8);
+    scene.add(sky);
+
+    // Distant construction silhouette
+    const silhouetteMat = new THREE.MeshBasicMaterial({ color: 0x4b6a86 });
+    for (let i = 0; i < 5; i++) {
+      const bw = 1.5 + Math.random() * 1.2;
+      const bh = 2 + Math.random() * 2.4;
+      const geo = new THREE.BoxGeometry(bw, bh, 0.2);
+      const m = new THREE.Mesh(geo, silhouetteMat);
+      m.position.set(-2 + i * 2.2, bh / 2, -5.5);
+      scene.add(m);
+      // crane
+      if (i === 2) {
+        const pole = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4, 0.12), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+        pole.position.set(-2 + i * 2.2, 3, -5.4);
+        scene.add(pole);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(3, 0.12, 0.12), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+        arm.position.set(-2 + i * 2.2 + 1.2, 4.7, -5.4);
+        scene.add(arm);
+      }
     }
+
+    // Ground: dirt with darker strip
+    const groundGeo = new THREE.PlaneGeometry(40, 12);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xc49a6b, roughness: 1 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    scene.add(ground);
+
+    // Warning stripe strip along front
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(40, 0.35), new THREE.MeshBasicMaterial({ color: 0xffc107 }));
+    stripe.rotation.x = -Math.PI / 2;
+    stripe.position.set(0, 0.01, 2.5);
+    scene.add(stripe);
 
     // Barrels props
     for (let i = 0; i < 3; i++) {
       const bg = new THREE.CylinderGeometry(0.28, 0.28, 0.7, 12);
-      const bm = new THREE.MeshStandardMaterial({ color: i === 1 ? 0xf59e0b : 0xef4444, roughness: 0.5, metalness: 0.2 });
+      const bm = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xef4444 : 0xf59e0b, roughness: 0.6 });
       const b = new THREE.Mesh(bg, bm);
-      b.position.set(-2.8 + i * 0.45, 0.35, -1.2 - i * 0.3);
+      b.position.set(-3.5 + i * 0.5, 0.35, -2 - i * 0.4);
       scene.add(b);
     }
 
-    // Industrial yellow hazard sign ("W")
+    // Warning sign
     const sign = new THREE.Group();
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.1, 0.06), new THREE.MeshBasicMaterial({ color: 0x4b5563 }));
-    post.position.y = 0.55;
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.04), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 }));
-    board.position.y = 1.15;
-    sign.add(post);
-    sign.add(board);
-    sign.position.set(6.8, 0, -0.6);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 0.08), new THREE.MeshBasicMaterial({ color: 0x374151 }));
+    post.position.y = 0.6;
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.05), new THREE.MeshBasicMaterial({ color: 0xffc107 }));
+    board.position.y = 1.3;
+    sign.add(post); sign.add(board);
+    sign.position.set(7.5, 0, -0.5);
     scene.add(sign);
 
     // Cannon (group with barrel + base)
     const cannonGroup = new THREE.Group();
     cannonGroup.position.copy(CANNON_POS);
 
-    // Barrel: heavy cast iron with muzzle rim
-    const barrelGeo = new THREE.CylinderGeometry(0.18, 0.23, BARREL_LEN, 18);
-    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x1f242d, roughness: 0.35, metalness: 0.75 });
+    // barrel
+    const barrelGeo = new THREE.CylinderGeometry(0.18, 0.22, BARREL_LEN, 16);
+    const barrelMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.4, metalness: 0.7 });
     const barrel = new THREE.Mesh(barrelGeo, barrelMat);
     barrel.rotation.z = -Math.PI / 2;
     barrel.position.x = BARREL_LEN / 2;
     cannonGroup.add(barrel);
 
-    // Muzzle ring
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.04, 8, 18), new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.3, metalness: 0.8 }));
+    // muzzle ring
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 8, 16), new THREE.MeshStandardMaterial({ color: 0xff5a00, roughness: 0.3 }));
     ring.rotation.y = Math.PI / 2;
     ring.position.x = BARREL_LEN;
     cannonGroup.add(ring);
@@ -392,16 +412,15 @@ export function GameScene({
     scene.add(cannonGroup);
     cannonMeshRef.current = cannonGroup;
 
-    // Cannon wooden carriage base
-    const baseGeo = new THREE.BoxGeometry(0.9, 0.55, 0.85);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x54361e, roughness: 0.85 });
+    // Cannon base (static)
+    const baseGeo = new THREE.BoxGeometry(0.9, 0.6, 0.9);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.7 });
     const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.set(CANNON_POS.x - 0.15, 0.28, 0);
+    base.position.set(CANNON_POS.x - 0.15, 0.3, 0);
     scene.add(base);
-
-    // Cast iron wheels with bolts
-    for (const zoff of [-0.52, 0.52]) {
-      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 16), new THREE.MeshStandardMaterial({ color: 0x1e2229, roughness: 0.65, metalness: 0.6 }));
+    // wheels
+    for (const zoff of [-0.55, 0.55]) {
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.14, 14), new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 }));
       w.rotation.x = Math.PI / 2;
       w.position.set(CANNON_POS.x - 0.15, 0.32, zoff);
       scene.add(w);
@@ -431,13 +450,14 @@ export function GameScene({
     world.broadphase = new CANNON.SAPBroadphase(world);
     world.solver.iterations = 14;
     world.allowSleep = true;
+    // Consistent, low-bounce contacts to reduce jitter / excessive bouncing.
     world.defaultContactMaterial.friction = 0.5;
     world.defaultContactMaterial.restitution = 0.03;
     world.defaultContactMaterial.contactEquationStiffness = 1e7;
     world.defaultContactMaterial.contactEquationRelaxation = 4;
     worldRef.current = world;
 
-    // Ground physics plane at y=0
+    // Ground physics
     const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane(), material: new CANNON.Material({ friction: 0.7, restitution: 0.02 }) });
     groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
     world.addBody(groundBody);
@@ -448,7 +468,7 @@ export function GameScene({
 
   const startLoop = () => {
     const clock = new THREE.Clock();
-    const baseCam = { x: 3.2, y: 2.3, z: 9.2 };
+    const baseCam = { x: 3.2, y: 3.4, z: 10.5 };
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
     const render = () => {
       if (!glRef.current) return;
@@ -485,14 +505,14 @@ export function GameScene({
       const z = zoomRef.current;
 
       let camX = baseCam.x, camY = baseCam.y, camZ = baseCam.z;
-      let lookX = 3.2, lookY = 2.3, lookZ = 0;
+      let lookX = 3.2, lookY = 1.5, lookZ = 0;
       if (z > 0.001) {
         const t = zoomTargetRef.current;
         camX = lerp(baseCam.x, t.x, 0.4 * z);
         camY = lerp(baseCam.y, t.y + 1.4, 0.4 * z);
         camZ = lerp(baseCam.z, 6.8, z);
         lookX = lerp(3.2, t.x, z);
-        lookY = lerp(2.3, t.y + 0.5, z);
+        lookY = lerp(1.5, t.y, z);
       }
       // Camera shake (additive)
       if (shakeRef.current > 0.001) {
@@ -712,11 +732,6 @@ export function GameScene({
 
   return (
     <View style={styles.root} onLayout={onLayout} {...panResponder.panHandlers} testID="game-canvas">
-      <ImageBackground
-        source={require('../../assets/images/industrial_bg.jpg')}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
       <GLView
         style={StyleSheet.absoluteFill}
         onContextCreate={onContextCreate}
@@ -726,5 +741,5 @@ export function GameScene({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#7ec8f0', overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: theme.color.sky, overflow: 'hidden' },
 });
