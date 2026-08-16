@@ -721,6 +721,20 @@ export function GameScene({
   const step = (delta: number) => {
     const world = worldRef.current!;
     const camera = cameraRef.current!;
+
+    // If no shot has been fired yet, keep scene completely static at rest and do not step physics
+    if (shotsUsedRef.current === 0) {
+      blocksRef.current.forEach(b => {
+        b.mesh.position.set(b.def.x, b.def.y, b.def.z ?? 0);
+        if (b.def.rot) b.mesh.rotation.z = b.def.rot;
+        b.body.position.set(b.def.x, b.def.y, b.def.z ?? 0);
+        b.body.velocity.set(0, 0, 0);
+        b.body.angularVelocity.set(0, 0, 0);
+        b.initialPos.set(b.def.x, b.def.y, b.def.z ?? 0);
+      });
+      return;
+    }
+
     // Slow-mo during the winning collapse for extra drama.
     const inSlowmo = completedRef.current && pendingResultRef.current?.cleared && Date.now() < slowmoUntilRef.current;
     const factor = inSlowmo ? 0.32 : 1;
@@ -731,16 +745,6 @@ export function GameScene({
     let destroyed = 0;
     let newlyDestroyed = 0;
     let cx = 0, cy = 0;
-
-    // If no shot has been fired yet, keep syncing baseline resting positions and do not evaluate destruction
-    if (shotsUsedRef.current === 0) {
-      blocksRef.current.forEach(b => {
-        b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);
-        b.mesh.quaternion.set(b.body.quaternion.x, b.body.quaternion.y, b.body.quaternion.z, b.body.quaternion.w);
-        b.initialPos.set(b.body.position.x, b.body.position.y, b.body.position.z);
-      });
-      return;
-    }
 
     blocksRef.current.forEach(b => {
       b.mesh.position.set(b.body.position.x, b.body.position.y, b.body.position.z);

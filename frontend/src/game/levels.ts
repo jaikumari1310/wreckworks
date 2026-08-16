@@ -232,10 +232,10 @@ const WORLD_2_LEVELS: LevelDef[] = [
     hint: 'SHOOT THE RAMP SUPPORT TO RELEASE THE HEAVY BALL',
     shots: 3,
     blocks: [
-      { x: 4.8, y: 0.5, w: 0.4, h: 1.0, material: MAT.wood },
-      { x: 6.0, y: 0.8, w: 0.4, h: 1.6, material: MAT.wood },
-      { x: 5.4, y: 1.4, w: 1.8, h: 0.25, material: MAT.wood, rot: -0.22 },
-      { x: 5.8, y: 1.95, w: 0.7, h: 0.7, material: MAT.heavy_ball, isSphere: true },
+      { x: 4.7, y: 0.7, w: 0.4, h: 1.4, material: MAT.wood },
+      { x: 4.7, y: 1.5, w: 0.8, h: 0.25, material: MAT.wood }, // Flat resting shelf
+      { x: 4.7, y: 1.95, w: 0.7, h: 0.7, material: MAT.heavy_ball, isSphere: true },
+      { x: 5.7, y: 0.95, w: 1.8, h: 0.22, material: MAT.wood, rot: -0.28 }, // Down-ramp
       // Target dock crates
       { x: 7.2, y: 0.4, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
       { x: 7.2, y: 1.2, w: 0.8, h: 0.8, material: MAT.crate, isTarget: true },
@@ -251,10 +251,10 @@ const WORLD_2_LEVELS: LevelDef[] = [
     name: 'The Ramp & Pillar',
     shots: 3,
     blocks: [
-      { x: 4.6, y: 0.8, w: 0.5, h: 1.6, material: MAT.concrete },
-      { x: 5.6, y: 0.5, w: 0.4, h: 1.0, material: MAT.wood },
-      { x: 5.3, y: 1.45, w: 2.2, h: 0.25, material: MAT.wood, rot: -0.25 },
-      { x: 4.6, y: 2.05, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      { x: 4.5, y: 0.9, w: 0.5, h: 1.8, material: MAT.concrete },
+      { x: 4.5, y: 1.9, w: 0.8, h: 0.25, material: MAT.wood }, // Flat resting shelf
+      { x: 4.5, y: 2.35, w: 0.75, h: 0.75, material: MAT.heavy_ball, isSphere: true },
+      { x: 5.6, y: 1.35, w: 2.0, h: 0.22, material: MAT.wood, rot: -0.3 }, // Down-ramp
       // Target tower
       { x: 6.8, y: 0.55, w: 0.4, h: 1.1, material: MAT.wood, isTarget: true },
       { x: 7.8, y: 0.75, w: 0.4, h: 1.5, material: MAT.brick },
@@ -272,16 +272,17 @@ const WORLD_2_LEVELS: LevelDef[] = [
     name: 'Double Cascade',
     shots: 3,
     blocks: [
-      { x: 5.2, y: 2.3, w: 2.2, h: 0.25, material: MAT.wood, rot: 0.22 },
-      { x: 6.0, y: 2.85, w: 0.7, h: 0.7, material: MAT.heavy_ball, isSphere: true },
-      { x: 6.4, y: 1.3, w: 2.2, h: 0.25, material: MAT.wood, rot: -0.25 },
-      { x: 6.2, y: 1.7, w: 0.35, h: 0.6, material: MAT.wood },
+      { x: 4.8, y: 1.2, w: 0.4, h: 2.4, material: MAT.wood },
+      { x: 4.8, y: 2.5, w: 0.8, h: 0.25, material: MAT.wood }, // Flat resting shelf
+      { x: 4.8, y: 2.95, w: 0.7, h: 0.7, material: MAT.heavy_ball, isSphere: true },
+      { x: 5.8, y: 2.0, w: 1.8, h: 0.22, material: MAT.wood, rot: -0.25 }, // High ramp
+      { x: 6.6, y: 1.15, w: 1.8, h: 0.22, material: MAT.wood, rot: -0.25 }, // Mid ramp
       // Target warehouse
-      { x: 7.2, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 8.2, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
-      { x: 7.7, y: 1.05, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
-      { x: 7.7, y: 1.55, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
-      { x: 7.7, y: 2.2, w: 0.6, h: 0.6, material: MAT.crate, isTarget: true },
+      { x: 7.6, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
+      { x: 8.6, y: 0.45, w: 0.4, h: 0.9, material: MAT.wood, isTarget: true },
+      { x: 8.1, y: 1.05, w: 1.8, h: 0.3, material: MAT.brick, isTarget: true },
+      { x: 8.1, y: 1.55, w: 0.7, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 8.1, y: 2.2, w: 0.6, h: 0.6, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 3, two: 2, three: 1 },
   },
