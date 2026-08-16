@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { View, StyleSheet, PanResponder, LayoutChangeEvent, Text, Platform, ImageBackground } from 'react-native';
-import { LevelDef, BlockDef, MATERIAL_PROFILE, BlockMaterial } from './levels';
+import { LevelDef, BlockDef, MATERIAL_PROFILE, BlockMaterial, getWorldByLevelId, WorldDef } from './levels';
 import { theme } from './theme';
 import { sfx } from './sfx';
 
@@ -237,6 +237,8 @@ export function GameScene({
     hideTrajectory();
   };
 
+  const currentWorld = useMemo(() => getWorldByLevelId(level.id), [level.id]);
+
   // Purely visual dust particles (Zero CANNON bodies, lightweight kinematics)
   const spawnDust = (at: THREE.Vector3) => {
     const scene = sceneRef.current;
@@ -259,6 +261,93 @@ export function GameScene({
       const vz = (Math.random() - 0.5) * 1.0;
       particlesRef.current.push({ mesh, vx, vy, vz, ttl: 0.65, maxTtl: 0.65 });
     }
+  };
+
+  // Spectacular visual fire & smoke explosion particles (Zero CANNON bodies)
+  const spawnExplosionFX = (at: THREE.Vector3) => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (!dustGeoRef.current) {
+      dustGeoRef.current = new THREE.DodecahedronGeometry(0.06, 0);
+    }
+    const colors = [0xff3b30, 0xff9500, 0xffcc00, 0xef4444, 0x475569, 0x1e293b];
+    for (let i = 0; i < 16; i++) {
+      const isSmoke = i % 2 === 0;
+      const col = colors[i % colors.length];
+      const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.95 });
+      const mesh = new THREE.Mesh(dustGeoRef.current, mat);
+      const scale = isSmoke ? (1.5 + Math.random() * 1.0) : (1.0 + Math.random() * 0.7);
+      mesh.scale.set(scale, scale, scale);
+      mesh.position.set(
+        at.x + (Math.random() - 0.5) * 0.35,
+        at.y + (Math.random() - 0.5) * 0.35,
+        at.z + (Math.random() - 0.5) * 0.35
+      );
+      scene.add(mesh);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3.0 + Math.random() * 4.2;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed * 0.75 + 3.0; // explosive upward burst
+      const vz = (Math.random() - 0.5) * 2.0;
+      particlesRef.current.push({ mesh, vx, vy, vz, ttl: 0.85, maxTtl: 0.85 });
+    }
+  };
+
+  // World 2 Explosive Barrel detonation mechanic: true rigid-body kinetic shockwave
+  const detonateBarrel = (barrel: DynamicBlock) => {
+    if (barrel.destroyed) return;
+    barrel.destroyed = true;
+    barrel.mesh.visible = false;
+
+    const bPos = new THREE.Vector3(barrel.body.position.x, barrel.body.position.y, barrel.body.position.z);
+    const radius = barrel.def.explosionRadius ?? 3.4;
+    const force = barrel.def.explosionForce ?? 55;
+
+    // Apply radial explosion shockwave to all physical blocks
+    blocksRef.current.forEach(b => {
+      if (b === barrel || b.destroyed) return;
+      const dx = b.body.position.x - bPos.x;
+      const dy = b.body.position.y - bPos.y;
+      const dz = b.body.position.z - bPos.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist <= radius) {
+        b.body.wakeUp();
+        const nx = dx / Math.max(0.12, dist);
+        const ny = dy / Math.max(0.12, dist);
+        const nz = dz / Math.max(0.12, dist);
+        const impulseMag = (force / (dist + 0.35)) * b.body.mass * 0.28;
+        const impulse = new CANNON.Vec3(
+          nx * impulseMag,
+          Math.max(ny * impulseMag, 4) + 7.0, // strong upward kinetic launch
+          nz * impulseMag
+        );
+        b.body.applyImpulse(impulse, b.body.position);
+      }
+    });
+
+    // Also blast cannonballs in flight
+    ballsRef.current.forEach(ball => {
+      const dx = ball.body.position.x - bPos.x;
+      const dy = ball.body.position.y - bPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= radius) {
+        ball.body.wakeUp();
+        const nx = dx / Math.max(0.12, dist);
+        const ny = dy / Math.max(0.12, dist);
+        const impulseMag = (force / (dist + 0.35)) * ball.body.mass * 0.25;
+        ball.body.applyImpulse(new CANNON.Vec3(nx * impulseMag, ny * impulseMag + 5, 0), ball.body.position);
+      }
+    });
+
+    // Visual FX + punchy camera shake + explosion audio
+    spawnExplosionFX(bPos);
+    shakeRef.current = Math.min(0.5, shakeRef.current + 0.38);
+    sfx.collapse();
+
+    // Scoring & Target tracking
+    scoreRef.current += 150;
+    events.onScoreChange(scoreRef.current);
+    destroyedThisShotRef.current += 1;
   };
 
   // --- Build/rebuild scene ---------------------------------------
@@ -306,17 +395,42 @@ export function GameScene({
       const w = def.w;
       const h = def.h;
       const d = def.d ?? 0.8;
-      const geo = new THREE.BoxGeometry(w, h, d);
-      const mat = new THREE.MeshStandardMaterial({ color: prof.color, roughness: 0.75, metalness: def.material === 'metal' ? 0.6 : 0.05 });
-      const mesh = new THREE.Mesh(geo, mat);
-      // Add edge highlight
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: prof.edge }));
-      mesh.add(edges);
+      const isExplosive = def.isExplosive || prof.isExplosive;
+
+      let mesh: THREE.Mesh;
+      if (def.material === 'explosive_barrel') {
+        // Distinctive red explosive powder barrel with dark steel hoops
+        const barrelGeo = new THREE.CylinderGeometry(w / 2, w / 2, h, 16);
+        const barrelMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.45, metalness: 0.3 });
+        mesh = new THREE.Mesh(barrelGeo, barrelMat);
+
+        // Black/Yellow hazard ring in the middle
+        const hoop = new THREE.Mesh(
+          new THREE.TorusGeometry(w / 2 + 0.015, 0.035, 8, 16),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.5 })
+        );
+        hoop.rotation.x = Math.PI / 2;
+        mesh.add(hoop);
+      } else {
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const mat = new THREE.MeshStandardMaterial({
+          color: prof.color,
+          roughness: 0.75,
+          metalness: def.material === 'metal' ? 0.6 : 0.05,
+        });
+        mesh = new THREE.Mesh(geo, mat);
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: prof.edge }));
+        mesh.add(edges);
+      }
+
       mesh.position.set(def.x, def.y, def.z ?? 0);
       if (def.rot) mesh.rotation.z = def.rot;
       scene.add(mesh);
 
-      const shape = new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2));
+      const shape = def.material === 'explosive_barrel'
+        ? new CANNON.Cylinder(w / 2, w / 2, h, 14)
+        : new CANNON.Box(new CANNON.Vec3(w / 2, h / 2, d / 2));
+
       const body = new CANNON.Body({
         mass: prof.mass,
         shape,
@@ -325,7 +439,7 @@ export function GameScene({
         linearDamping: 0.08,
         angularDamping: 0.16,
       });
-      // Let resting structures settle & sleep for stability + perf.
+
       body.allowSleep = true;
       body.sleepSpeedLimit = 0.18;
       body.sleepTimeLimit = 0.4;
@@ -335,7 +449,19 @@ export function GameScene({
         body.quaternion.copy(q);
       }
       world.addBody(body);
-      blocksRef.current.push({ def, mesh, body, initialPos: new THREE.Vector3(def.x, def.y, def.z ?? 0), destroyed: false });
+
+      const blockEntry: DynamicBlock = { def, mesh, body, initialPos: new THREE.Vector3(def.x, def.y, def.z ?? 0), destroyed: false };
+      blocksRef.current.push(blockEntry);
+
+      // Attach collision listener for explosive barrels
+      if (isExplosive) {
+        body.addEventListener('collide', (ev: any) => {
+          const impact = ev.contact.getImpactVelocityAlongNormal();
+          if (impact > 1.6 && !blockEntry.destroyed) {
+            detonateBarrel(blockEntry);
+          }
+        });
+      }
     });
 
     // reset aim
@@ -351,7 +477,7 @@ export function GameScene({
 
     const renderer = new Renderer({ gl });
     renderer.setSize(width, height);
-    // Transparent WebGL canvas so the rich industrial background image shows through smoothly
+    // Transparent WebGL canvas so the rich background artwork shows through smoothly
     renderer.setClearColor(0x000000, 0);
     rendererRef.current = renderer;
 
@@ -359,23 +485,23 @@ export function GameScene({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Camera adjusted so y=0 (ground) projects firmly onto the road in the lower third of the screen
+    // Camera adjusted so y=0 (ground) projects firmly onto the road/pier in the lower third of the screen
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
     camera.position.set(3.2, 2.3, 9.2);
     camera.lookAt(3.2, 2.3, 0);
     cameraRef.current = camera;
 
-    // Warm daylight + soft ambient lighting matching the industrial artwork
-    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    // Environment lighting matching the active world theme
+    const ambient = new THREE.AmbientLight(currentWorld.ambientColor, currentWorld.ambientIntensity);
     scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xfff4db, 1.3);
+    const dir = new THREE.DirectionalLight(currentWorld.sunColor, currentWorld.sunIntensity);
     dir.position.set(5, 9, 6.5);
     scene.add(dir);
-    const dir2 = new THREE.DirectionalLight(0x8bc0ec, 0.35);
+    const dir2 = new THREE.DirectionalLight(currentWorld.skyFillColor, 0.35);
     dir2.position.set(-5, 4, -3);
     scene.add(dir2);
 
-    // Ground details: 3D pebbles & concrete rubble bits sitting on the terrain
+    // Ground details: 3D pebbles & props sitting on the terrain
     const pebbleMat = new THREE.MeshStandardMaterial({ color: 0x765f49, roughness: 0.95 });
     const rubbleMat = new THREE.MeshStandardMaterial({ color: 0x8e9299, roughness: 0.88 });
     for (let i = 0; i < 22; i++) {
@@ -390,25 +516,44 @@ export function GameScene({
       scene.add(pMesh);
     }
 
-    // Barrels props
-    for (let i = 0; i < 3; i++) {
-      const bg = new THREE.CylinderGeometry(0.28, 0.28, 0.7, 12);
-      const bm = new THREE.MeshStandardMaterial({ color: i === 1 ? 0xf59e0b : 0xef4444, roughness: 0.5, metalness: 0.2 });
-      const b = new THREE.Mesh(bg, bm);
-      b.position.set(-2.8 + i * 0.45, 0.35, -1.2 - i * 0.3);
-      scene.add(b);
-    }
+    if (currentWorld.groundProps === 'construction') {
+      // Construction World barrels
+      for (let i = 0; i < 3; i++) {
+        const bg = new THREE.CylinderGeometry(0.28, 0.28, 0.7, 12);
+        const bm = new THREE.MeshStandardMaterial({ color: i === 1 ? 0xf59e0b : 0xef4444, roughness: 0.5, metalness: 0.2 });
+        const b = new THREE.Mesh(bg, bm);
+        b.position.set(-2.8 + i * 0.45, 0.35, -1.2 - i * 0.3);
+        scene.add(b);
+      }
 
-    // Industrial yellow hazard sign ("W")
-    const sign = new THREE.Group();
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.1, 0.06), new THREE.MeshBasicMaterial({ color: 0x4b5563 }));
-    post.position.y = 0.55;
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.04), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 }));
-    board.position.y = 1.15;
-    sign.add(post);
-    sign.add(board);
-    sign.position.set(6.8, 0, -0.6);
-    scene.add(sign);
+      // Industrial yellow hazard sign ("W")
+      const sign = new THREE.Group();
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.1, 0.06), new THREE.MeshBasicMaterial({ color: 0x4b5563 }));
+      post.position.y = 0.55;
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.04), new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 }));
+      board.position.y = 1.15;
+      sign.add(post);
+      sign.add(board);
+      sign.position.set(6.8, 0, -0.6);
+      scene.add(sign);
+    } else {
+      // Pirate Harbor World decorative pier bollards & nautical barrels
+      for (let i = 0; i < 2; i++) {
+        const bg = new THREE.CylinderGeometry(0.26, 0.26, 0.65, 12);
+        const bm = new THREE.MeshStandardMaterial({ color: 0x6b4226, roughness: 0.85 });
+        const b = new THREE.Mesh(bg, bm);
+        b.position.set(-2.8 + i * 0.5, 0.32, -1.1);
+        scene.add(b);
+      }
+
+      // Wooden dock mooring bollard
+      const bollard = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.14, 0.6, 10),
+        new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 })
+      );
+      bollard.position.set(6.8, 0.3, -0.5);
+      scene.add(bollard);
+    }
 
     // Cannon (group with barrel + base)
     const cannonGroup = new THREE.Group();
@@ -758,7 +903,7 @@ export function GameScene({
   return (
     <View style={styles.root} onLayout={onLayout} {...panResponder.panHandlers} testID="game-canvas">
       <ImageBackground
-        source={require('../../assets/images/industrial_bg.jpg')}
+        source={currentWorld.backgroundAsset}
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
       />

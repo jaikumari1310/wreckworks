@@ -20,7 +20,7 @@ export default function GameScreen() {
   const params = useLocalSearchParams<{ levelId?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const initialId = Math.max(1, Math.min(LEVELS.length, parseInt((params.levelId as string) || '1', 10)));
+  const initialId = Math.max(1, parseInt((params.levelId as string) || '1', 10));
   const [levelId, setLevelId] = useState<number>(initialId);
   const level = useMemo(() => LEVELS.find(l => l.id === levelId) || LEVELS[0], [levelId]);
 
@@ -28,7 +28,7 @@ export default function GameScreen() {
   const [shots, setShots] = useState(0);
   const [paused, setPaused] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
-  const [hintVisible, setHintVisible] = useState(levelId === 1);
+  const [hintVisible, setHintVisible] = useState(!!level.hint);
   const [levelKey, setLevelKey] = useState(0); // remount to reset scene
   const [chain, setChain] = useState<ChainData | null>(null);
   const { enabled: soundOn, toggle: toggleSound } = useSound();
@@ -90,18 +90,19 @@ export default function GameScreen() {
 
   const goNext = () => {
     sfx.play('click');
-    if (levelId >= LEVELS.length) {
+    const idx = LEVELS.findIndex(l => l.id === levelId);
+    if (idx < 0 || idx >= LEVELS.length - 1) {
       router.replace('/levels');
       return;
     }
-    const next = levelId + 1;
-    setLevelId(next);
+    const nextLevel = LEVELS[idx + 1];
+    setLevelId(nextLevel.id);
     setResult(null);
     setChain(null);
     setScore(0);
     setShots(0);
     setLevelKey(k => k + 1);
-    setHintVisible(next === 1);
+    setHintVisible(!!nextLevel.hint);
   };
 
   return (
@@ -127,7 +128,7 @@ export default function GameScreen() {
           </Pressable>
           <View style={styles.levelPill}>
             <Text style={styles.levelPillLabel}>LVL</Text>
-            <Text style={styles.levelPillNum}>{level.id}</Text>
+            <Text style={styles.levelPillNum}>{level.worldId === 2 ? `2-${level.id - 10}` : level.id}</Text>
           </View>
         </View>
 
