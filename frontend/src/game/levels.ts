@@ -235,11 +235,11 @@ const WORLD_2_LEVELS: LevelDef[] = [
     shots: 4,
     blocks: [
       // Pier Dock Staging Foundations
-      { x: 2.8, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
-      { x: 5.2, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
+      { x: 5.0, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
+      { x: 7.4, y: 0.55, w: 0.5, h: 1.1, material: MAT.wood },
       // Central Explosive Red Barrel (Weak Point)
       {
-        x: 4.0,
+        x: 6.2,
         y: 0.45,
         w: 0.7,
         h: 0.9,
@@ -250,11 +250,11 @@ const WORLD_2_LEVELS: LevelDef[] = [
         explosionForce: 55,
       },
       // Wooden Deck Platform
-      { x: 4.0, y: 1.2, w: 2.9, h: 0.3, material: MAT.wood, isTarget: true },
+      { x: 6.2, y: 1.2, w: 2.9, h: 0.3, material: MAT.wood, isTarget: true },
       // Upper Cargo Staging & Crates
-      { x: 3.4, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
-      { x: 4.6, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
-      { x: 4.0, y: 2.5, w: 0.8, h: 0.7, material: MAT.crate, isTarget: true },
+      { x: 5.6, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 6.8, y: 1.75, w: 0.75, h: 0.8, material: MAT.crate, isTarget: true },
+      { x: 6.2, y: 2.5, w: 0.8, h: 0.7, material: MAT.crate, isTarget: true },
     ],
     starThresholds: { one: 4, two: 2, three: 1 },
   },
